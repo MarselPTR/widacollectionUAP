@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wida Collection - Toko Thrift Online Terpercaya</title>
+    <link rel="stylesheet" href="output.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body class="font-poppins bg-gray-50">
+    <!-- header dan navigation -->
+    <header class="wc-header wc-header-on-hero sticky top-0 z-50 backdrop-blur">
+        <div class="container mx-auto px-4">
+            <nav class="flex justify-between items-center py-3">
+                <a href="#" class="text-2xl font-bold text-primary wc-reveal" style="--reveal-delay: 0ms;">Wida<span class="text-secondary">Collection</span></a>
+                
+                <div class="hidden md:flex space-x-8">
+                    <a href="#home" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 80ms;">Beranda</a>
+                    <a href="#about" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 120ms;">Tentang</a>
+                    <a href="#products" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 160ms;">Produk</a>
+                    <a href="#live-drop" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 200ms;">Buka Bal</a>
+                    <a href="#testimonials" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 240ms;">Testimoni</a>
+                    <a href="#contact" class="wc-nav-link font-medium hover:text-secondary transition duration-300 wc-reveal" style="--reveal-delay: 280ms;">Kontak</a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Search Button -->
+                    <button id="searchBtn" class="wc-header-action text-gray-700 hover:text-secondary focus:outline-none">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <!-- Cart Button -->
+                    <a id="cartBtn" data-nav-target="cart" data-requires-auth="1" href="cart.html" class="wc-header-action text-gray-700 hover:text-secondary focus:outline-none relative">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span id="cartCount" class="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full px-1 hidden">0</span>
+                    </a>
+                    <!-- Wishlist Button -->
+                    <a id="wishlistBtn" data-nav-target="wishlist" data-requires-auth="1" href="wishlist.html" class="wc-header-action text-gray-700 hover:text-secondary focus:outline-none relative">
+                        <i class="fas fa-heart"></i>
+                        <span id="wishlistCountBadge" class="absolute -top-2 -right-2 bg-secondary text-white text-xs rounded-full px-1 hidden">0</span>
+                    </a>
+                    <!-- Profile Button -->
+                    <a id="profileBtn" data-nav-target="profile" data-requires-auth="1" href="profile.html" class="wc-header-action inline-flex items-center gap-2 text-gray-700 hover:text-secondary focus:outline-none transition duration-300" aria-label="Profil">
+                        <span class="sr-only">Profil</span>
+                        <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center overflow-hidden shadow">
+                            <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
+                            <span id="headerUserInitials" data-wc-avatar-fallback class="text-sm font-bold">WC</span>
+                        </span>
+                        <span id="headerUserFullName" class="wc-header-user-name hidden md:inline text-sm font-semibold">User</span>
+                    </a>
+                    <button class="md:hidden text-gray-700">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- hero section -->
+    <section id="home" class="hero-bg relative overflow-hidden text-white -mt-20 md:-mt-24 flex items-center">
+        <div class="hero-slider" aria-hidden="true">
+            <div class="hero-slide is-active" data-hero-slide style="background-image: url('https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1600&q=80');"></div>
+            <div class="hero-slide" data-hero-slide style="background-image: url('https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=1600&q=80');"></div>
+            <div class="hero-slide" data-hero-slide style="background-image: url('https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1600&q=80');"></div>
+            <div class="hero-overlay" aria-hidden="true"></div>
+        </div>
+        <div class="container relative z-10 mx-auto px-4 text-center w-full py-20 md:py-28">
+            <div class="mx-auto max-w-4xl">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6 md:mb-8 wc-reveal wc-reveal-text" style="--reveal-delay: 80ms;">Temukan Gaya Unik dengan Barang Thrift Berkualitas</h1>
+                <p class="text-base sm:text-lg md:text-xl text-white/90 leading-relaxed mb-10 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 180ms;">Kami menghadirkan pilihan barang thrift terbaik dengan kualitas terjamin. Setiap item memiliki cerita dan karakter yang membuatnya spesial.</p>
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <a href="#products" class="wc-cta-secondary inline-flex items-center justify-center bg-secondary text-white font-medium py-3 px-8 rounded-full transition duration-300 wc-reveal" style="--reveal-delay: 260ms;">Jelajahi Katalog</a>
+                    <a href="#live-drop" class="inline-flex items-center justify-center border-2 border-white hover:bg-white hover:text-dark text-white font-medium py-3 px-8 rounded-full transition duration-300 wc-reveal" style="--reveal-delay: 320ms;">Jadwal Buka Bal</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- about section -->
+    <section id="about" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-dark mb-4 wc-reveal" style="--reveal-delay: 60ms;">Tentang Wida Collection</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Kami adalah platform thrift online yang menghubungkan pecinta fashion vintage dengan barang-barang berkualitas dan penuh karakter.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <img src="https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg?auto=compress&cs=tinysrgb&w=900&q=80" alt="Rak baju vintage - Tentang Kami" class="rounded-lg shadow-lg">
+                </div>
+                <div>
+                    <h3 class="text-2xl font-bold text-dark mb-4 wc-reveal" style="--reveal-delay: 100ms;">Gaya Klasik dengan Cerita</h3>
+                    <p class="text-gray-600 mb-6 wc-reveal" style="--reveal-delay: 180ms;">Wida Collection hadir untuk memberikan pengalaman berbelanja barang thrift yang berbeda. Kami tidak hanya menjual pakaian bekas, tetapi juga menyampaikan cerita dan nilai di balik setiap item.</p>
+                    <p class="text-gray-600 mb-8 wc-reveal" style="--reveal-delay: 240ms;">Dengan kurasi yang ketat, kami memastikan setiap produk yang kami jual memiliki kualitas terbaik dan kondisi yang sesuai dengan deskripsi.</p>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-check text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Kualitas Terjamin</h4>
+                                <p class="text-gray-600 text-sm">Setiap item melalui proses seleksi ketat</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-shipping-fast text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Pengiriman Cepat</h4>
+                                <p class="text-gray-600 text-sm">Pesanan diproses dalam 24 jam</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-undo text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Garansi Kepuasan</h4>
+                                <p class="text-gray-600 text-sm">Return mudah jika tidak sesuai</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-headset text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Dukungan 24/7</h4>
+                                <p class="text-gray-600 text-sm">Customer service siap membantu</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- products section -->
+    <section id="products" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-dark mb-2 wc-reveal" style="--reveal-delay: 60ms;">Koleksi Terbaru</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Data produk dimuat secara dinamis dari Public API.</p>
+            </div>
+
+            <div id="productsLoading" class="text-center text-gray-500 mb-8">Memuat produk...</div>
+            <div id="productsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"></div>
+
+            <div class="text-center mt-12">
+                <button id="loadMoreBtn" class="inline-block bg-primary hover:bg-red-600 text-white font-medium py-3 px-8 rounded-full transition duration-300">Muat Lebih Banyak</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- live drop section -->
+    <section id="live-drop" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 id="liveDropSectionTitle" class="text-3xl md:text-4xl font-bold text-dark mb-4 wc-reveal" style="--reveal-delay: 60ms;">Buka Bal Selanjutnya</h2>
+                <p id="liveDropSectionDesc" class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Jangan lewatkan sesi buka bal eksklusif kami via TikTok Live dengan penawaran spesial!</p>
+            </div>
+            
+            <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-8 text-white text-center max-w-4xl mx-auto">
+                <h3 id="liveDropEventTitle" class="text-2xl md:text-3xl font-bold mb-2 wc-reveal" style="--reveal-delay: 180ms;">Buka Bal Spesial Kaos Band Vintage</h3>
+                <p id="liveDropEventSubtitle" class="text-lg mb-6 wc-reveal" style="--reveal-delay: 240ms;">Sabtu, 15 Juli 2023 - Pukul 20:00 WIB</p>
+                
+                <div class="flex justify-center space-x-4 mb-8">
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                        <div class="text-3xl font-bold" id="countdown-days">05</div>
+                        <div class="text-sm">Hari</div>
+                    </div>
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                        <div class="text-3xl font-bold" id="countdown-hours">12</div>
+                        <div class="text-sm">Jam</div>
+                    </div>
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                        <div class="text-3xl font-bold" id="countdown-minutes">45</div>
+                        <div class="text-sm">Menit</div>
+                    </div>
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                        <div class="text-3xl font-bold" id="countdown-seconds">30</div>
+                        <div class="text-sm">Detik</div>
+                    </div>
+                </div>
+                
+                <button id="liveDropCtaBtn" type="button" class="bg-white text-primary hover:bg-gray-100 font-bold py-3 px-8 rounded-full transition duration-300 mb-6 wc-reveal" style="--reveal-delay: 320ms;">
+                    <i class="fas fa-bell mr-2"></i>
+                    <span id="liveDropCtaLabel">Ingatkan Saya</span>
+                </button>
+                
+                <div id="liveDropTeasers" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                        <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 1" class="max-h-24 md:max-h-28 w-auto object-contain">
+                    </div>
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                        <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 2" class="max-h-24 md:max-h-28 w-auto object-contain">
+                    </div>
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                        <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 3" class="max-h-24 md:max-h-28 w-auto object-contain">
+                    </div>
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                        <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 4" class="max-h-24 md:max-h-28 w-auto object-contain">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- testimonials section -->
+    <section id="testimonials" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-dark mb-4 wc-reveal" style="--reveal-delay: 60ms;">Apa Kata Pelanggan?</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Testimoni dari pelanggan setia kami yang puas dengan produk dan layanan Wida Collection.</p>
+            </div>
+
+            <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+                <div class="testimonial-slide active">
+                    <div class="text-center">
+                        <!-- Avatar sementara dihilangkan -->
+                        <p class="text-gray-600 italic text-lg mb-6">"Saya sangat puas dengan pembelian kaos vintage dari Wida Collection. Kualitasnya jauh lebih baik dari yang saya bayangkan. Pengiriman juga cepat dan packingnya rapi!"</p>
+                        <p class="font-bold text-dark">Sarah, Jakarta</p>
+                    </div>
+                </div>
+                
+                <div class="testimonial-slide">
+                    <div class="text-center">
+                        <!-- Avatar sementara dihilangkan -->
+                        <p class="text-gray-600 italic text-lg mb-6">"Sistem buka bal di TikTok Live sangat seru! Saya berhasil mendapatkan jaket denim impian dengan harga yang terjangkau. Pelayanannya juga ramah dan responsif."</p>
+                        <p class="font-bold text-dark">Andi, Bandung</p>
+                    </div>
+                </div>
+                
+                <div class="testimonial-slide">
+                    <div class="text-center">
+                        <!-- Avatar sementara dihilangkan -->
+                        <p class="text-gray-600 italic text-lg mb-6">"Barang yang saya terima sesuai dengan deskripsi dan foto. Proses belanja mudah, dan saya suka sekali dengan fitur pencarian berdasarkan kode produk saat live."</p>
+                        <p class="font-bold text-dark">Maya, Surabaya</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center space-x-3 mt-8">
+                    <button class="testimonial-dot w-3 h-3 rounded-full bg-primary"></button>
+                    <button class="testimonial-dot w-3 h-3 rounded-full bg-gray-300"></button>
+                    <button class="testimonial-dot w-3 h-3 rounded-full bg-gray-300"></button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- contact section -->
+    <section id="contact" class="py-16 bg-white">
+        <div class="container mx-auto px-4">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-dark mb-4 wc-reveal" style="--reveal-delay: 60ms;">Hubungi Kami</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Punya pertanyaan atau butuh bantuan? Tim kami siap membantu Anda.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-12 max-w-4xl mx-auto">
+                <div>
+                    <h3 class="text-2xl font-bold text-dark mb-6">Informasi Kontak</h3>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Alamat</h4>
+                                <p class="text-gray-600">Jl. Thrift No. 123, Jakarta Selatan</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-phone text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Telepon</h4>
+                                <p class="text-gray-600">+62 812-3456-7890</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-envelope text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Email</h4>
+                                <p class="text-gray-600">info@widacollection.com</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start">
+                            <div class="bg-primary rounded-full p-3 mr-4">
+                                <i class="fas fa-clock text-white"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-dark">Jam Operasional</h4>
+                                <p class="text-gray-600">Senin - Minggu: 09.00 - 21.00 WIB</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <h4 class="font-bold text-dark mb-4">Ikuti Kami</h4>
+                        <div class="flex space-x-4">
+                            <a href="#" class="bg-gray-200 hover:bg-primary hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition duration-300">
+                                <i class="fab fa-tiktok"></i>
+                            </a>
+                            <a href="#" class="bg-gray-200 hover:bg-primary hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition duration-300">
+                                <i class="fab fa-instagram"></i>
+                            </a>
+                            <a href="#" class="bg-gray-200 hover:bg-primary hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition duration-300">
+                                <i class="fab fa-whatsapp"></i>
+                            </a>
+                            <a href="#" class="bg-gray-200 hover:bg-primary hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition duration-300">
+                                <i class="fab fa-facebook"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-2xl font-bold text-dark mb-6">Kirim Pesan</h3>
+                    
+                    <form id="contactForm" class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-gray-700 mb-2">Nama Lengkap</label>
+                            <input type="text" id="name" name="name" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                        </div>
+                        
+                        <div>
+                            <label for="email" class="block text-gray-700 mb-2">Email</label>
+                            <input type="email" id="email" name="email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                        </div>
+                        
+                        <div>
+                            <label for="subject" class="block text-gray-700 mb-2">Subjek</label>
+                            <input type="text" id="subject" name="subject" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary">
+                        </div>
+                        
+                        <div>
+                            <label for="message" class="block text-gray-700 mb-2">Pesan</label>
+                            <textarea id="message" name="message" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-primary"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="bg-primary hover:bg-red-600 text-white font-medium py-3 px-8 rounded-full transition duration-300 w-full">Kirim Pesan</button>
+                        <p id="contactFormStatus" class="text-sm text-gray-500 hidden"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- footer -->
+    <footer class="bg-dark text-white py-12">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-2xl font-bold text-primary mb-4">Thrift<span class="text-secondary">Vibe</span></h3>
+                    <p class="text-gray-300 mb-6">Platform thrift online terpercaya dengan koleksi barang vintage berkualitas dan penuh karakter.</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-300 hover:text-primary">
+                            <i class="fab fa-tiktok"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-primary">
+                            <i class="fab fa-instagram"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-primary">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                        <a href="#" class="text-gray-300 hover:text-primary">
+                            <i class="fab fa-facebook"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Link Cepat</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#home" class="text-gray-300 hover:text-primary transition duration-300">Beranda</a></li>
+                        <li><a href="#about" class="text-gray-300 hover:text-primary transition duration-300">Tentang Kami</a></li>
+                        <li><a href="#products" class="text-gray-300 hover:text-primary transition duration-300">Produk</a></li>
+                        <li><a href="#live-drop" class="text-gray-300 hover:text-primary transition duration-300">Buka Bal</a></li>
+                        <li><a href="#testimonials" class="text-gray-300 hover:text-primary transition duration-300">Testimoni</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Kategori</h4>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-300 hover:text-primary transition duration-300">Kaos</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-primary transition duration-300">Celana</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-primary transition duration-300">Jaket</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-primary transition duration-300">Dress</a></li>
+                        <li><a href="#" class="text-gray-300 hover:text-primary transition duration-300">Aksesoris</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="text-lg font-bold mb-4">Newsletter</h4>
+                    <p class="text-gray-300 mb-4">Dapatkan informasi terbaru tentang produk dan promo spesial.</p>
+                    <form class="flex">
+                        <input type="email" placeholder="Email Anda" class="flex-1 px-4 py-2 rounded-l-lg focus:outline-none text-dark">
+                        <button type="submit" class="bg-primary hover:bg-red-600 px-4 rounded-r-lg transition duration-300">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400">
+                <p>&copy; 2023 Wida Collection. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- search popover (compact, top) -->
+    <div id="searchModal" class="fixed inset-0 z-50 hidden wc-search-overlay" aria-hidden="true">
+        <div class="wc-search-panel" role="dialog" aria-label="Cari Produk">
+            <div class="wc-search-head">
+                <div class="wc-search-title">
+                    <span class="wc-search-icon" aria-hidden="true"><i class="fas fa-search"></i></span>
+                    <span>Cari Produk</span>
+                </div>
+                <button id="closeSearch" type="button" class="wc-search-close" aria-label="Tutup">&times;</button>
+            </div>
+            <input id="searchInput" type="text" placeholder="Cari nama produk..." class="wc-search-input" autocomplete="off" />
+            <div id="searchResults" class="wc-search-results"></div>
+        </div>
+    </div>
+
+    <!-- cart modal -->
+    <div id="cartModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+        <div class="modal modal-content-custom w-full max-w-lg">
+            <button id="closeCart" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white grid place-items-center">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-dark">Keranjang Belanja</h3>
+            </div>
+            <ul id="cartItems" class="mb-4 max-h-72 overflow-y-auto space-y-2"></ul>
+            <button id="checkoutBtn" class="btn-main w-full">Checkout</button>
+        </div>
+    </div>
+
+    <!-- profile modal -->
+    <div id="profileModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+        <div class="modal modal-content-custom w-full max-w-md">
+            <button id="closeProfile" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
+            <div class="wc-auth-modal">
+                <div class="wc-auth-head">
+                    <span class="wc-auth-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+                    <div>
+                        <h3 class="wc-auth-title text-lg">Profil Pengguna</h3>
+                        <p class="text-xs text-gray-500">Akses fitur lengkap setelah login</p>
+                    </div>
+                </div>
+                <div id="profileContent" class="text-gray-600">
+                    <p class="wc-auth-sub">Anda belum login. Masuk untuk menyimpan aktivitas dan mempercepat proses belanja.</p>
+                    <div class="wc-auth-perks" aria-hidden="true">
+                        <div class="wc-auth-perk"><i class="fas fa-heart"></i><span class="text-sm text-gray-700">Simpan wishlist favorit</span></div>
+                        <div class="wc-auth-perk"><i class="fas fa-bag-shopping"></i><span class="text-sm text-gray-700">Checkout lebih cepat</span></div>
+                        <div class="wc-auth-perk"><i class="fas fa-receipt"></i><span class="text-sm text-gray-700">Pantau pesanan & ulasan</span></div>
+                    </div>
+                    <div class="wc-auth-actions">
+                        <button class="btn-main">Login</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- product detail modal -->
+    <div id="productDetailModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+        <div class="modal modal-content-custom w-full max-w-2xl">
+            <button id="closeProductDetail" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white grid place-items-center">
+                    <i class="fas fa-tag"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-dark">Detail Produk</h3>
+            </div>
+            <div id="productDetailContent" class="grid md:grid-cols-2 gap-6">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var heroSlides = Array.prototype.slice.call(document.querySelectorAll('[data-hero-slide]'));
+            if (!heroSlides.length) {
+                return;
+            }
+
+            var activeIndex = 0;
+            var changeSlide = function (nextIndex) {
+                heroSlides.forEach(function (slide, idx) {
+                    slide.classList.toggle('is-active', idx === nextIndex);
+                });
+            };
+
+            changeSlide(activeIndex);
+
+            setInterval(function () {
+                activeIndex = (activeIndex + 1) % heroSlides.length;
+                changeSlide(activeIndex);
+            }, 3000);
+        });
+    </script>
+    <script src="js/profile-data.js"></script>
+    <script src="js/review-store.js"></script>
+    <script src="js/live-drop-store.js"></script>
+    <script src="js/custom-products.js"></script>
+    <script src="js/reveal.js" defer></script>
+    <script src="js/main.js" defer></script>
+</body>
+</html>

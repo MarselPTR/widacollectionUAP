@@ -35,11 +35,11 @@
                         <button id="wishlistClear" class="text-sm font-semibold text-red-500 hover:text-red-600">Bersihkan Semua</button>
                     </div>
                     <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="rounded-2xl bg-gradient-to-br from-primary/10 to-white border border-primary/20 p-4">
+                        <div class="rounded-2xl bg-linear-to-br from-primary/10 to-white border border-primary/20 p-4">
                             <p class="text-sm text-gray-500">Total Item</p>
                             <p id="wishlistCount" class="text-3xl font-bold text-primary">0</p>
                         </div>
-                        <div class="rounded-2xl bg-gradient-to-br from-secondary/10 to-white border border-secondary/20 p-4">
+                        <div class="rounded-2xl bg-linear-to-br from-secondary/10 to-white border border-secondary/20 p-4">
                             <p class="text-sm text-gray-500">Prioritas Tinggi</p>
                             <p id="wishlistPriority" class="text-3xl font-bold text-secondary">0</p>
                         </div>
@@ -69,22 +69,26 @@
             const REDIRECT_KEY = 'wc_login_redirect';
             const setLoginRedirect = (value) => {
                 try {
-                    localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                    sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
                 } catch (_) {}
             };
             const currentRelativeUrl = () => {
                 const file = window.location.pathname.split('/').pop() || 'wishlist.html';
                 return `${file}${window.location.search || ''}${window.location.hash || ''}`;
             };
-            if (localStorage.getItem('wc_logged_in') !== '1') {
-                setLoginRedirect(currentRelativeUrl());
-                window.location.href = 'login.html';
-                return;
-            }
-            if (!window.ProfileStore) {
-                alert('Data wishlist belum siap. Muat ulang halaman.');
-                return;
-            }
+            (async () => {
+                if (!window.AuthStore || !window.ProfileStore) {
+                    alert('Sistem auth belum siap. Muat ulang halaman.');
+                    return;
+                }
+                const me = await AuthStore.me();
+                if (!me) {
+                    const next = currentRelativeUrl();
+                    setLoginRedirect(next);
+                    window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                    return;
+                }
+                await ProfileStore.ready;
 
             const listEl = document.getElementById('wishlistItems');
             const emptyEl = document.getElementById('wishlistEmpty');
@@ -153,6 +157,7 @@
             });
 
             renderWishlist();
+            })();
         });
     </script>
 </body>

@@ -43,7 +43,7 @@
                     <!-- Profile Button -->
                     <a id="profileBtn" data-nav-target="profile" data-requires-auth="1" href="profile.html" class="wc-header-action inline-flex items-center gap-2 text-gray-700 hover:text-secondary focus:outline-none transition duration-300" aria-label="Profil">
                         <span class="sr-only">Profil</span>
-                        <span class="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary text-white flex items-center justify-center overflow-hidden shadow">
+                        <span class="w-10 h-10 rounded-full bg-linear-to-br from-primary to-secondary text-white flex items-center justify-center overflow-hidden shadow">
                             <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
                             <span id="headerUserInitials" data-wc-avatar-fallback class="text-sm font-bold">WC</span>
                         </span>
@@ -162,24 +162,24 @@
                 <p id="liveDropSectionDesc" class="text-gray-600 max-w-2xl mx-auto wc-reveal" style="--reveal-delay: 140ms;">Jangan lewatkan sesi buka bal eksklusif kami via TikTok Live dengan penawaran spesial!</p>
             </div>
             
-            <div class="bg-gradient-to-r from-primary to-secondary rounded-2xl p-8 text-white text-center max-w-4xl mx-auto">
+            <div class="bg-linear-to-r from-primary to-secondary rounded-2xl p-8 text-white text-center max-w-4xl mx-auto">
                 <h3 id="liveDropEventTitle" class="text-2xl md:text-3xl font-bold mb-2 wc-reveal" style="--reveal-delay: 180ms;">Buka Bal Spesial Kaos Band Vintage</h3>
                 <p id="liveDropEventSubtitle" class="text-lg mb-6 wc-reveal" style="--reveal-delay: 240ms;">Sabtu, 15 Juli 2023 - Pukul 20:00 WIB</p>
                 
                 <div class="flex justify-center space-x-4 mb-8">
-                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-20">
                         <div class="text-3xl font-bold" id="countdown-days">05</div>
                         <div class="text-sm">Hari</div>
                     </div>
-                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-20">
                         <div class="text-3xl font-bold" id="countdown-hours">12</div>
                         <div class="text-sm">Jam</div>
                     </div>
-                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-20">
                         <div class="text-3xl font-bold" id="countdown-minutes">45</div>
                         <div class="text-sm">Menit</div>
                     </div>
-                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-[80px]">
+                    <div class="bg-dark bg-opacity-30 rounded-lg p-4 text-center min-w-20">
                         <div class="text-3xl font-bold" id="countdown-seconds">30</div>
                         <div class="text-sm">Detik</div>
                     </div>
@@ -191,16 +191,16 @@
                 </button>
                 
                 <div id="liveDropTeasers" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-4/3">
                         <img src="https://images.unsplash.com/photo-1523381210434-271e8be1f52b?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 1" class="max-h-24 md:max-h-28 w-auto object-contain">
                     </div>
-                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-4/3">
                         <img src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 2" class="max-h-24 md:max-h-28 w-auto object-contain">
                     </div>
-                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-4/3">
                         <img src="https://images.unsplash.com/photo-1586790170083-2f9ceadc732d?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 3" class="max-h-24 md:max-h-28 w-auto object-contain">
                     </div>
-                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-[4/3]">
+                    <div class="rounded-xl bg-white/95 ring-1 ring-white/40 shadow-sm flex items-center justify-center aspect-4/3">
                         <img src="https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80" alt="Teaser 4" class="max-h-24 md:max-h-28 w-auto object-contain">
                     </div>
                 </div>
@@ -434,11 +434,12 @@
     </div>
 
     <!-- cart modal -->
-    <div id="cartModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+    <div id="cartModal" class="fixed inset-0 z-50 hidden modal-bg p-4">
+        <div class="w-full h-full grid place-items-center">
         <div class="modal modal-content-custom w-full max-w-lg">
             <button id="closeCart" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white grid place-items-center">
+                <div class="w-10 h-10 rounded-full bg-linear-to-r from-primary to-secondary text-white grid place-items-center">
                     <i class="fas fa-shopping-cart"></i>
                 </div>
                 <h3 class="text-lg font-semibold text-dark">Keranjang Belanja</h3>
@@ -446,10 +447,12 @@
             <ul id="cartItems" class="mb-4 max-h-72 overflow-y-auto space-y-2"></ul>
             <button id="checkoutBtn" class="btn-main w-full">Checkout</button>
         </div>
+        </div>
     </div>
 
     <!-- profile modal -->
-    <div id="profileModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+    <div id="profileModal" class="fixed inset-0 z-50 hidden modal-bg p-4">
+        <div class="w-full h-full grid place-items-center">
         <div class="modal modal-content-custom w-full max-w-md">
             <button id="closeProfile" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
             <div class="wc-auth-modal">
@@ -473,14 +476,16 @@
                 </div>
             </div>
         </div>
+        </div>
     </div>
 
     <!-- product detail modal -->
-    <div id="productDetailModal" class="fixed inset-0 z-50 hidden modal-bg grid place-items-center p-4">
+    <div id="productDetailModal" class="fixed inset-0 z-50 hidden modal-bg p-4">
+        <div class="w-full h-full grid place-items-center">
         <div class="modal modal-content-custom w-full max-w-2xl">
             <button id="closeProductDetail" class="absolute top-3 right-3 modal-close text-xl text-gray-500 w-8 h-8 rounded-full flex items-center justify-center">&times;</button>
             <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-gradient-to-r from-primary to-secondary text-white grid place-items-center">
+                <div class="w-10 h-10 rounded-full bg-linear-to-r from-primary to-secondary text-white grid place-items-center">
                     <i class="fas fa-tag"></i>
                 </div>
                 <h3 class="text-lg font-semibold text-dark">Detail Produk</h3>
@@ -488,6 +493,7 @@
             <div id="productDetailContent" class="grid md:grid-cols-2 gap-6">
                 <!-- Filled dynamically -->
             </div>
+        </div>
         </div>
     </div>
 
@@ -514,9 +520,6 @@
         });
     </script>
     <script src="js/profile-data.js"></script>
-    <script src="js/review-store.js"></script>
-    <script src="js/live-drop-store.js"></script>
-    <script src="js/custom-products.js"></script>
     <script src="js/reveal.js" defer></script>
     <script src="js/main.js" defer></script>
 </body>

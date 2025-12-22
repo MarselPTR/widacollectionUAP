@@ -188,34 +188,32 @@
         <script src="js/reveal.js" defer></script>
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="js/profile-data.js"></script>
-        <script src="js/order-store.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const LOGIN_KEY = 'wc_logged_in';
-                const CART_KEY = 'wc_cart_items';
-                const BUY_NOW_KEY = 'wc_buy_now_items_v1';
-                const ORDER_KEY = 'wc_last_order';
                 const REDIRECT_KEY = 'wc_login_redirect';
-                const RATE_IDR = 16000;
                 const setLoginRedirect = (value) => {
                     try {
-                        localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
                     } catch (_) {}
                 };
                 const currentRelativeUrl = () => {
                     const file = window.location.pathname.split('/').pop() || 'checkout.html';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
-                if (localStorage.getItem(LOGIN_KEY) !== '1') {
-                    setLoginRedirect(currentRelativeUrl());
-                    window.location.href = 'login.html';
-                    return;
-                }
-                if (!window.ProfileStore) {
-                    alert('Data profil tidak tersedia. Muat ulang halaman.');
-                    window.location.href = 'body.html';
-                    return;
-                }
+                (async () => {
+                    if (!window.AuthStore || !window.ProfileStore) {
+                        alert('Sistem auth belum siap. Muat ulang halaman.');
+                        return;
+                    }
+                    const me = await AuthStore.me();
+                    if (!me) {
+                        const next = currentRelativeUrl();
+                        setLoginRedirect(next);
+                        window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                        return;
+                    }
+
+                    await ProfileStore.ready;
 
                 const summaryList = document.getElementById('summaryList');
                 const summarySubtotal = document.getElementById('summarySubtotal');
@@ -249,87 +247,53 @@
                 const quickAddressLat = document.getElementById('quickAddressLat');
                 const quickAddressLng = document.getElementById('quickAddressLng');
                 const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
-                const SHIPPING_PREF_KEY = 'wc_shipping_pref';
+                let profileData = ProfileStore.getProfileData();
 
-                const profileData = ProfileStore.getProfileData();
+                const apiFetchJson = async (url, options = {}) => {
+                    const res = await fetch(url, {
+                        credentials: 'same-origin',
+                        headers: {
+                            Accept: 'application/json',
+                            'Content-Type': 'application/json',
+                            ...(options.headers || {}),
+                        },
+                        ...options,
+                    });
+                    const data = await res.json().catch(() => null);
+                    if (!res.ok) {
+                        const err = new Error(data?.message || `Request failed (${res.status})`);
+                        err.status = res.status;
+                        err.data = data;
+                        throw err;
+                    }
+                    return data;
+                };
 
-                const readListFromKey = (key) => {
-                    try {
-                        const raw = localStorage.getItem(key) || '[]';
-                        const parsed = JSON.parse(raw);
-                        return Array.isArray(parsed) ? parsed : [];
-                    } catch (_) {
-                        return [];
+                let cart = null;
+                let cartItems = [];
+                let cartSummary = { subtotal: 0, shipping: 0, total: 0 };
+
+                const applyShippingFromCart = () => {
+                    if (!shippingSelect || !cart) return;
+                    const value = String(cart.shipping_value ?? '0');
+                    if (shippingSelect.querySelector(`option[value="${value}"]`)) {
+                        shippingSelect.value = value;
                     }
                 };
 
-                const checkoutSourceKey = (() => {
-                    const buyNowList = readListFromKey(BUY_NOW_KEY);
-                    return buyNowList.length ? BUY_NOW_KEY : CART_KEY;
-                })();
+                const loadCart = async () => {
+                    const res = await apiFetchJson('/api/cart');
+                    cart = res?.data?.cart || null;
+                    cartItems = Array.isArray(res?.data?.items) ? res.data.items : [];
+                    cartSummary = res?.data?.summary || { subtotal: 0, shipping: 0, total: 0 };
+                    applyShippingFromCart();
 
-                const persistCheckoutLines = () => {
-                    try {
-                        const payload = cartLines.map((line) => ({
-                            id: line.id,
-                            name: line.name,
-                            priceRaw: line.price,
-                            priceDisplay: currency.format(line.price),
-                            image: line.image,
-                            qty: line.quantity,
-                        }));
-                        localStorage.setItem(checkoutSourceKey, JSON.stringify(payload));
-                    } catch (_) {}
-                };
-
-                const parseNumber = (value) => {
-                    if (typeof value === 'number' && Number.isFinite(value)) return value;
-                    if (typeof value === 'string') {
-                        const numeric = Number(value.replace(/[^0-9,-]/g, '').replace(/,/g, '.').replace(/\.(?=.*\.)/g, ''));
-                        if (Number.isFinite(numeric)) return numeric;
+                    if (!cartItems.length) {
+                        window.location.href = 'cart.html';
+                        return false;
                     }
-                    return 0;
+                    return true;
                 };
-
-                const loadShippingPref = () => {
-                    try {
-                        const raw = localStorage.getItem(SHIPPING_PREF_KEY);
-                        const parsed = raw ? JSON.parse(raw) : null;
-                        return parsed && typeof parsed === 'object' ? parsed : null;
-                    } catch (error) {
-                        console.warn('Gagal membaca preferensi pengiriman', error);
-                        return null;
-                    }
-                };
-
-                const persistShippingPref = () => {
-                    if (!shippingSelect) return;
-                    const selected = shippingSelect.selectedOptions[0];
-                    const payload = {
-                        value: shippingSelect.value,
-                        label: selected?.dataset.label || selected?.textContent?.trim() || '',
-                    };
-                    localStorage.setItem(SHIPPING_PREF_KEY, JSON.stringify(payload));
-                };
-
-                const normalizeLine = (raw, idx) => {
-                    if (!raw) return null;
-                    const quantity = Number(raw.quantity ?? raw.qty ?? 1);
-                    const price = parseNumber(raw.price ?? raw.priceRaw ?? raw.priceDisplay);
-                    return {
-                        id: String(raw.id ?? `wc-${idx}-${Date.now()}`),
-                        name: raw.name ?? raw.title ?? 'Produk Wida Collection',
-                        image: raw.image,
-                        price: price > 0 ? price : 0,
-                        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-                    };
-                };
-
-                let cartLines = readListFromKey(checkoutSourceKey).map(normalizeLine).filter(Boolean);
-                if (!cartLines.length) {
-                    window.location.href = 'cart.html';
-                    return;
-                }
 
                 const applyAddressSelection = (address) => {
                     if (!address) return;
@@ -643,13 +607,13 @@
                     toggleQuickAddressForm(true);
                 });
 
-                quickAddressSave?.addEventListener('click', () => {
+                quickAddressSave?.addEventListener('click', async () => {
                     const detail = quickAddressDetail.value.trim();
                     if (!detail) {
                         setQuickStatus('Detail alamat wajib diisi.', true);
                         return;
                     }
-                    const saved = ProfileStore.upsertAddress({
+                    await ProfileStore.upsertAddress({
                         label: quickAddressLabel.value.trim() || 'Alamat baru',
                         recipient: quickAddressRecipient.value.trim() || checkoutForm.fullname.value.trim(),
                         phone: quickAddressPhone.value.trim() || checkoutForm.phone.value.trim(),
@@ -660,9 +624,12 @@
                         mapsAddress: detail,
                         isPrimary: quickAddressPrimary.checked,
                     });
+                    await ProfileStore.refresh();
+                    profileData = ProfileStore.getProfileData();
                     setQuickStatus('Alamat tersimpan.');
                     renderSavedAddresses();
-                    applyAddressSelection(saved);
+                    const primaryAddress = profileData.addresses?.find((addr) => addr.isPrimary) || profileData.addresses?.[profileData.addresses.length - 1];
+                    applyAddressSelection(primaryAddress);
                     quickAddressLabel.value = '';
                     quickAddressRecipient.value = '';
                     quickAddressPhone.value = '';
@@ -676,61 +643,21 @@
                     toggleQuickAddressForm(true);
                 });
 
-                const applySavedShipping = () => {
-                    const pref = loadShippingPref();
-                    if (pref?.value && shippingSelect?.querySelector(`option[value="${pref.value}"]`)) {
-                        shippingSelect.value = String(pref.value);
-                    }
-                    persistShippingPref();
-                };
-
-                const recordOrderHistory = (order) => {
-                    if (!window.OrderStore || typeof OrderStore.append !== 'function') return;
-                    try {
-                        const baseId = String(order.id || `WC${Date.now().toString().slice(-6)}`);
-                        const createdAt = order.createdAt;
-                        const customer = order.customer || null;
-                        const lines = Array.isArray(order.items) ? order.items : [];
-
-                        // Save each product line as its own trackable order entry.
-                        lines.forEach((line, idx) => {
-                            const lineId = `${baseId}-${String(idx + 1).padStart(2, '0')}`;
-                            const qty = Number(line.quantity || line.qty || 1);
-                            const unitPrice = Number(line.price || 0);
-                            OrderStore.append(profileData?.email, {
-                                id: lineId,
-                                createdAt,
-                                productId: String(line.id || lineId),
-                                productTitle: line.name || line.title || 'Produk Wida Collection',
-                                productImage: line.image || '',
-                                items: [line],
-                                total: unitPrice * qty,
-                                shippingLabel: order.shippingLabel,
-                                status: 'packed',
-                                statusNote: 'Sedang dikemas',
-                                customer,
-                            });
-                        });
-                    } catch (error) {
-                        console.warn('Gagal menambahkan riwayat pesanan', error);
-                    }
-                };
-
                 const renderSummary = () => {
-                    summaryList.innerHTML = cartLines
+                    summaryList.innerHTML = cartItems
                         .map(
                             (line) => `
                                 <li class="flex items-start justify-between gap-3">
                                     <div class="flex items-start gap-3 min-w-0">
                                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                                            ${line.image ? `<img src="${escapeHTML(line.image)}" alt="${escapeHTML(line.name)}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : '<span class="text-[10px] text-gray-400">No Image</span>'}
+                                            ${line.image ? `<img src="${escapeHTML(line.image)}" alt="${escapeHTML(line.name || 'Produk') }" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : '<span class="text-[10px] text-gray-400">No Image</span>'}
                                         </div>
                                         <div class="min-w-0">
-                                            <p class="font-semibold text-dark truncate">${escapeHTML(line.name)}</p>
-                                            <p class="text-xs text-gray-400">Qty ${line.quantity}</p>
+                                            <p class="font-semibold text-dark truncate">${escapeHTML(line.name || 'Produk')}</p>
+                                            <p class="text-xs text-gray-400">Qty ${line.quantity || 1}</p>
                                         </div>
                                     </div>
-                                    <span class="font-semibold">${currency.format(line.price * line.quantity)}</span>
+                                    <span class="font-semibold">${currency.format((Number(line.price) || 0) * (Number(line.quantity) || 1))}</span>
                                 </li>
                             `,
                         )
@@ -739,22 +666,11 @@
 
                 const normalizeAvailableProduct = (p) => {
                     if (!p) return null;
-                    const id = String(p.id ?? '');
+                    const id = String(p.public_id ?? p.id ?? '');
                     const title = String(p.title || '').trim() || 'Produk Wida Collection';
                     const image = String(p.image || '').trim();
-                    const basePrice = Number(p.price) || 0;
-                    const priceIdr = Math.max(0, Math.round(basePrice * RATE_IDR));
+                    const priceIdr = Math.max(0, Number(p.price) || 0);
                     return { id, title, image, price: priceIdr };
-                };
-
-                const readCustomProducts = () => {
-                    try {
-                        const raw = localStorage.getItem('wc_custom_products_v1');
-                        const parsed = raw ? JSON.parse(raw) : [];
-                        return Array.isArray(parsed) ? parsed : [];
-                    } catch (_) {
-                        return [];
-                    }
                 };
 
                 let availableProducts = [];
@@ -789,45 +705,26 @@
                         .join('');
                 };
 
-                const addProductToCheckout = (product) => {
-                    const existing = cartLines.find((line) => String(line.id) === String(product.id));
-                    if (existing) {
-                        existing.quantity += 1;
-                    } else {
-                        cartLines.push({
-                            id: String(product.id),
-                            name: product.title,
-                            image: product.image,
-                            price: Number(product.price) || 0,
-                            quantity: 1,
-                        });
-                    }
-                    persistCheckoutLines();
+                const addProductToCheckout = async (product) => {
+                    await apiFetchJson('/api/cart/items', {
+                        method: 'POST',
+                        body: JSON.stringify({ product_id: String(product.id), quantity: 1 }),
+                    });
+                    await loadCart();
                     renderSummary();
                     recalcTotals();
                 };
 
                 const loadMoreProducts = async () => {
                     if (moreProductsStatus) moreProductsStatus.textContent = 'Memuat...';
-                    const custom = readCustomProducts().map(normalizeAvailableProduct).filter(Boolean);
-                    let api = [];
+                    let apiProducts = [];
                     try {
-                        const res = await fetch('https://fakestoreapi.com/products?limit=12');
-                        if (res.ok) {
-                            const data = await res.json();
-                            api = Array.isArray(data) ? data.map(normalizeAvailableProduct).filter(Boolean) : [];
-                        }
+                        const res = await apiFetchJson('/api/products');
+                        apiProducts = Array.isArray(res?.data) ? res.data.map(normalizeAvailableProduct).filter(Boolean) : [];
                     } catch (_) {
-                        api = [];
+                        apiProducts = [];
                     }
-
-                    const merged = [...custom, ...api].filter((p) => p && p.id);
-                    const seen = new Set();
-                    availableProducts = merged.filter((p) => {
-                        if (seen.has(p.id)) return false;
-                        seen.add(p.id);
-                        return true;
-                    });
+                    availableProducts = apiProducts.filter((p) => p && p.id);
 
                     if (moreProductsStatus) {
                         moreProductsStatus.textContent = availableProducts.length ? `${availableProducts.length} produk` : 'Tidak ada data';
@@ -835,74 +732,89 @@
                     renderMoreProducts();
                 };
 
-                const calcSubtotal = () => cartLines.reduce((acc, line) => acc + (line.price || 0) * (line.quantity || 0), 0);
-
                 const recalcTotals = () => {
-                    const shippingCost = Number(shippingSelect.value || 0);
-                    const subtotal = calcSubtotal();
-                    summarySubtotal.textContent = currency.format(subtotal);
-                    summaryShipping.textContent = currency.format(shippingCost);
-                    summaryTotal.textContent = currency.format(subtotal + shippingCost);
-                    return { subtotal, shippingCost, total: subtotal + shippingCost };
+                    summarySubtotal.textContent = currency.format(Number(cartSummary.subtotal) || 0);
+                    summaryShipping.textContent = currency.format(Number(cartSummary.shipping) || 0);
+                    summaryTotal.textContent = currency.format(Number(cartSummary.total) || 0);
+                    return { subtotal: Number(cartSummary.subtotal) || 0, shippingCost: Number(cartSummary.shipping) || 0, total: Number(cartSummary.total) || 0 };
                 };
-
-                const generateOrderId = () => `WC${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 90 + 10)}`;
 
                 renderSavedAddresses();
                 applyProfileDefaults();
-                applySavedShipping();
+                const hasCart = await loadCart();
+                if (!hasCart) return;
                 renderSummary();
                 recalcTotals();
 
                 loadMoreProducts();
                 moreProductsSearch?.addEventListener('input', renderMoreProducts);
-                moreProductsGrid?.addEventListener('click', (event) => {
+                moreProductsGrid?.addEventListener('click', async (event) => {
                     const btn = event.target.closest('[data-add-product-id]');
                     if (!btn) return;
                     const id = btn.getAttribute('data-add-product-id');
                     const found = availableProducts.find((p) => String(p.id) === String(id));
                     if (!found) return;
-                    addProductToCheckout(found);
+                    try {
+                        await addProductToCheckout(found);
+                    } catch (error) {
+                        console.error('Gagal menambahkan produk', error);
+                    }
                 });
-                shippingSelect.addEventListener('change', () => {
-                    recalcTotals();
-                    persistShippingPref();
+                shippingSelect.addEventListener('change', async () => {
+                    try {
+                        const selected = shippingSelect.selectedOptions?.[0];
+                        const shipping_value = Number(shippingSelect.value || 0);
+                        const shipping_label = selected?.dataset?.label || selected?.textContent?.trim() || null;
+                        await apiFetchJson('/api/cart/shipping', {
+                            method: 'PATCH',
+                            body: JSON.stringify({ shipping_value, shipping_label }),
+                        });
+                        await loadCart();
+                        renderSummary();
+                        recalcTotals();
+                    } catch (error) {
+                        console.error('Gagal menyimpan pengiriman', error);
+                    }
                 });
 
-                checkoutForm.addEventListener('submit', (event) => {
+                checkoutForm.addEventListener('submit', async (event) => {
                     event.preventDefault();
                     checkoutError.classList.add('hidden');
                     payButton.disabled = true;
-                    const data = new FormData(checkoutForm);
-                    const { subtotal, shippingCost, total } = recalcTotals();
-                    const order = {
-                        id: generateOrderId(),
-                        createdAt: new Date().toISOString(),
-                        items: cartLines,
-                        subtotal,
-                        shippingCost,
-                        shippingLabel: shippingSelect.selectedOptions[0]?.dataset.label || shippingSelect.selectedOptions[0]?.textContent?.trim() || 'Reguler',
-                        total,
+
+                    const formData = new FormData(checkoutForm);
+                    const selected = shippingSelect.selectedOptions?.[0];
+                    const payload = {
                         customer: {
-                            name: data.get('fullname'),
-                            phone: data.get('phone'),
-                            email: data.get('email'),
-                            address: data.get('address'),
-                            notes: data.get('notes'),
-                            payment: data.get('payment'),
+                            fullname: String(formData.get('fullname') || ''),
+                            phone: String(formData.get('phone') || ''),
+                            email: String(formData.get('email') || '') || null,
+                            address: String(formData.get('address') || ''),
+                            notes: String(formData.get('notes') || '') || null,
                         },
+                        payment: String(formData.get('payment') || '') || null,
+                        shipping_value: Number(shippingSelect.value || 0),
+                        shipping_label: selected?.dataset?.label || selected?.textContent?.trim() || null,
                     };
+
                     try {
-                        localStorage.setItem(ORDER_KEY, JSON.stringify(order));
-                        recordOrderHistory(order);
-                        localStorage.removeItem(checkoutSourceKey);
-                        window.location.href = 'success.html';
+                        const res = await apiFetchJson('/api/orders/checkout', {
+                            method: 'POST',
+                            body: JSON.stringify(payload),
+                        });
+                        const orderUuid = res?.data?.order?.uuid;
+                        if (!orderUuid) {
+                            throw new Error('Order berhasil dibuat, tapi UUID tidak ditemukan.');
+                        }
+                        window.location.href = `success.html?order=${encodeURIComponent(orderUuid)}`;
                     } catch (error) {
-                        checkoutError.textContent = 'Tidak dapat menyimpan pesanan. Coba ulangi.';
+                        const msg = error?.data?.message || error?.message || 'Terjadi kesalahan. Silakan coba lagi.';
+                        checkoutError.textContent = msg;
                         checkoutError.classList.remove('hidden');
                         payButton.disabled = false;
                     }
                 });
+                })();
             });
         </script>
     </body>

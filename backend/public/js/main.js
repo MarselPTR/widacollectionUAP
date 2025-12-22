@@ -204,15 +204,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // no-op
   }
 
-  const API_URL = 'https://fakestoreapi.com/products';
-  const RATE_IDR = 16000; 
+  const API_URL = '/api/products';
   let page = 1;
   const pageSize = 6;
   const productsGrid = document.getElementById('productsGrid');
   const productsLoading = document.getElementById('productsLoading');
   let loadMoreBtn = document.getElementById('loadMoreBtn');
   let dataCache = [];
-  const CART_KEY = 'wc_cart_items';
   const wishlistBadge = document.getElementById('wishlistCountBadge');
   const headerUserFullName = document.getElementById('headerUserFullName');
   const headerUserInitials = document.getElementById('headerUserInitials');
@@ -232,12 +230,49 @@ document.addEventListener('DOMContentLoaded', function() {
   let liveDropTargetDate = null;
   let liveDropCountdownTimer = null;
 
-  const getLiveDropDefaults = () => (window.LiveDropStore && LiveDropStore.defaultSettings) || {};
+  const apiFetchJson = async (url, options = {}) => {
+    const res = await fetch(url, {
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      const err = new Error(data?.message || `Request failed (${res.status})`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  };
 
-  const getLiveDropSettingsSafe = () => {
-    if (!window.LiveDropStore || typeof LiveDropStore.getSettings !== 'function') return null;
+  let meCache = null;
+  let mePromise = null;
+  const ensureMe = async () => {
+    if (mePromise) return mePromise;
+    mePromise = (async () => {
+      try {
+        if (!window.AuthStore || typeof AuthStore.me !== 'function') return null;
+        meCache = await AuthStore.me();
+        return meCache;
+      } catch (_) {
+        meCache = null;
+        return null;
+      } finally {
+        mePromise = null;
+      }
+    })();
+    return mePromise;
+  };
+
+  const loadLiveDropSettings = async () => {
     try {
-      return LiveDropStore.getSettings();
+      const res = await apiFetchJson('/api/live-drop');
+      return res?.data || null;
     } catch (_) {
       return null;
     }
@@ -320,24 +355,22 @@ document.addEventListener('DOMContentLoaded', function() {
     liveDropCountdownTimer = setInterval(updateLiveDropCountdown, 1000);
   };
 
-  const applyLiveDropSettings = () => {
-    const settings = getLiveDropSettingsSafe();
+  const applyLiveDropSettings = (settings) => {
     if (!settings) return;
-    const defaults = getLiveDropDefaults();
     if (liveDropElements.sectionTitle) {
-      liveDropElements.sectionTitle.textContent = settings.heroTitle || defaults.heroTitle || 'Buka Bal Selanjutnya';
+      liveDropElements.sectionTitle.textContent = settings.heroTitle || 'Buka Bal Selanjutnya';
     }
     if (liveDropElements.sectionDesc) {
-      liveDropElements.sectionDesc.textContent = settings.heroDescription || defaults.heroDescription || '';
+      liveDropElements.sectionDesc.textContent = settings.heroDescription || '';
     }
     if (liveDropElements.eventTitle) {
-      liveDropElements.eventTitle.textContent = settings.eventTitle || defaults.eventTitle || '';
+      liveDropElements.eventTitle.textContent = settings.eventTitle || '';
     }
     if (liveDropElements.eventSubtitle) {
       liveDropElements.eventSubtitle.textContent = formatEventSubtitle(settings);
     }
     if (liveDropElements.ctaLabel) {
-      liveDropElements.ctaLabel.textContent = settings.ctaLabel || defaults.ctaLabel || 'Ingatkan Saya';
+      liveDropElements.ctaLabel.textContent = settings.ctaLabel || 'Ingatkan Saya';
     }
     liveDropTargetDate = parseEventDate(settings.eventDateTime);
     if (!liveDropTargetDate) {
@@ -348,16 +381,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  const loadCart = () => {
+  let cartItems = [];
+
+  const fetchCartSafe = async () => {
     try {
-      const raw = localStorage.getItem(CART_KEY);
-      const parsed = raw ? JSON.parse(raw) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (_) {
-      return [];
+      const me = await ensureMe();
+      if (!me) return null;
+      const res = await apiFetchJson('/api/cart');
+      const items = Array.isArray(res?.data?.items) ? res.data.items : [];
+      cartItems = items;
+      return items;
+    } catch (err) {
+      if (err && err.status === 401) return null;
+      return null;
     }
   };
-  const saveCart = () => localStorage.setItem(CART_KEY, JSON.stringify(cart));
 
   const prefersReducedMotion = () => {
     try {
@@ -369,7 +407,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const getCartTotalQty = (items) => {
     if (!Array.isArray(items) || !items.length) return 0;
-    return items.reduce((sum, item) => sum + (Number(item?.qty) || 1), 0);
+    return items.reduce((sum, item) => sum + (Number(item?.quantity) || 1), 0);
   };
 
   const restartAnimClass = (el, className) => {
@@ -496,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!cc) return;
 
     const prevQty = lastCartTotalQty;
-    const nextQty = getCartTotalQty(cart);
+    const nextQty = getCartTotalQty(cartItems);
     lastCartTotalQty = nextQty;
 
     if (!nextQty) {
@@ -522,12 +560,40 @@ document.addEventListener('DOMContentLoaded', function() {
     animateFlyToCart(sourceEl);
   };
 
-  const addItemToCart = (item, sourceEl) => {
-    cart.push({ ...item, qty: item.qty || 1 });
-    saveCart();
-    updateCartBadge({ sourceEl });
+  const addItemToCart = async (item, sourceEl) => {
+    const productId = String(item?.id || '').trim();
+    if (!productId) return false;
+
+    const me = await ensureMe();
+    if (!me) {
+      window.location.href = 'login.html';
+      return false;
+    }
+
+    try {
+      await apiFetchJson('/api/cart/items', {
+        method: 'POST',
+        body: JSON.stringify({ product_id: productId, quantity: 1 }),
+      });
+
+      cartItems = (await fetchCartSafe()) || cartItems;
+      updateCartBadge({ sourceEl });
+      return true;
+    } catch (err) {
+      if (err && err.status === 401) {
+        window.location.href = 'login.html';
+        return false;
+      }
+
+      const message = err?.data?.message || err?.message || 'Gagal menambahkan ke keranjang.';
+      try {
+        window.alert(message);
+      } catch (_) {}
+      return false;
+    }
   };
-  const isLoggedIn = () => localStorage.getItem('wc_logged_in') === '1';
+
+  const isLoggedIn = () => !!meCache;
 
   const deriveInitials = (name = '') => {
     const parts = String(name)
@@ -594,38 +660,48 @@ document.addEventListener('DOMContentLoaded', function() {
 
   let reviewSummaryCache = {};
 
-  const getReviewSummaryMap = () => {
-    if (!window.ReviewStore || typeof ReviewStore.getSummaryMap !== 'function') return {};
+  const getReviewSummary = async (productPublicId) => {
+    const key = String(productPublicId || '');
+    if (!key) return { avg: 0, count: 0 };
+    if (reviewSummaryCache[key]) return reviewSummaryCache[key];
     try {
-      return ReviewStore.getSummaryMap();
+      const res = await apiFetchJson(`/api/reviews?product_id=${encodeURIComponent(key)}`);
+      const rows = Array.isArray(res?.data) ? res.data : [];
+      if (!rows.length) {
+        reviewSummaryCache[key] = { avg: 0, count: 0 };
+        return reviewSummaryCache[key];
+      }
+      const count = rows.length;
+      const sum = rows.reduce((acc, r) => acc + (Number(r?.rating) || 0), 0);
+      const avg = count ? sum / count : 0;
+      reviewSummaryCache[key] = { avg, count };
+      return reviewSummaryCache[key];
     } catch (_) {
-      return {};
+      reviewSummaryCache[key] = { avg: 0, count: 0 };
+      return reviewSummaryCache[key];
     }
   };
 
-  const refreshReviewSummaryCache = () => {
-    reviewSummaryCache = getReviewSummaryMap();
+  const ensureReviewSummaries = async (products) => {
+    const list = Array.isArray(products) ? products : [];
+    await Promise.all(
+      list.map(async (p) => {
+        const pid = p?.public_id;
+        if (!pid) return;
+        await getReviewSummary(pid);
+      }),
+    );
   };
 
-  const applyReviewSummaries = (products) => {
-    const summaryMap = getReviewSummaryMap();
-    reviewSummaryCache = summaryMap;
-    if (!summaryMap || !Object.keys(summaryMap).length) return products;
-    return products.map((product) => {
-      const summary = summaryMap[String(product.id)];
-      if (!summary || !summary.count) return product;
-      return {
-        ...product,
-        rating: {
-          rate: summary.avg || 0,
-          count: summary.count,
-        },
-      };
-    });
-  };
-
-  refreshReviewSummaryCache();
-  applyLiveDropSettings();
+  (async () => {
+    await ensureMe();
+    const settings = await loadLiveDropSettings();
+    if (settings) applyLiveDropSettings(settings);
+    cartItems = (await fetchCartSafe()) || [];
+    updateCartBadge();
+    updateWishlistBadge();
+    updateHeaderUser();
+  })();
 
   const MENS_SUBCATEGORIES = [
     'T-Shirts',
@@ -665,14 +741,7 @@ document.addEventListener('DOMContentLoaded', function() {
     { type: 'Pants', patterns: [/\btrouser(s)?\b/i, /\bpant(s)?\b/i, /\bchino(s)?\b/i] },
   ];
 
-  const getCustomProducts = () => {
-    if (!window.CustomProductStore || typeof CustomProductStore.getAll !== 'function') return [];
-    try {
-      return CustomProductStore.getAll();
-    } catch (_) {
-      return [];
-    }
-  };
+  const getCustomProducts = () => [];
 
   function isSupportedClothingProduct(title = '', rawCategory = '') {
     const hay = `${title || ''} ${rawCategory || ''}`.toLowerCase();
@@ -708,51 +777,35 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 
-  const mapCustomProducts = () => {
-    return getCustomProducts().map((item) => {
-      const normalized = normalizeCatalogProduct({
-        ...item,
-        category: item.category || '',
-        type: item.type || '',
-      });
-
-      return {
-        ...normalized,
-        rating: item.rating || { rate: 0, count: 0 },
-        price: typeof item.price === 'number' ? item.price : Number(item.price) || 0,
-        image: item.image || 'https://via.placeholder.com/400x400?text=Custom+Product',
-        description: item.description || 'Produk kustom dari admin.',
-        isCustom: true,
-      };
-    });
-  };
+  const mapCustomProducts = () => [];
 
   function isFemalePreferred(p) {
     return String(p.category || '').toLowerCase().includes('women');
   }
 
-  function formatIDR(usd) {
-    const idr = Math.round(usd * RATE_IDR);
-    return `Rp ${idr.toLocaleString('id-ID')}`;
+  function formatIDR(value) {
+    try {
+      return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(value) || 0);
+    } catch (_) {
+      return `Rp ${(Number(value) || 0).toLocaleString('id-ID')}`;
+    }
   }
 
   function productCard(p, idx) {
     const label = p._type || (idx % 3 === 0 ? 'New' : (idx % 3 === 1 ? 'Hot' : 'Limited'));
     const variant = p._type ? 'accent' : (idx % 3 === 0 ? 'primary' : (idx % 3 === 1 ? 'secondary' : 'muted'));
-    const summary = reviewSummaryCache[String(p.id)];
+    const summary = reviewSummaryCache[String(p.public_id || '')];
     let ratingDisplay = '-';
-    let stock = '-';
+    let stock = typeof p.stock === 'number' ? p.stock : (Number(p.stock) || 0);
     if (summary && summary.count) {
       ratingDisplay = Number(summary.avg || 0).toFixed(1);
-      stock = summary.count;
-    } else if (p.rating && p.rating.count) {
-      ratingDisplay = Number(p.rating.rate || 0).toFixed(1);
-      stock = p.rating.count;
     }
-      const detailUrl = `product-detail.html?id=${encodeURIComponent(p.id)}`;
-    const priceRaw = Math.round(p.price * RATE_IDR);
+
+    const detailRef = p.slug || p.public_id || p.uuid;
+    const detailUrl = `product-detail.html?id=${encodeURIComponent(detailRef)}`;
+    const priceRaw = Number(p.price) || 0;
     return `
-      <article class="product-card card-hover" data-id="${p.id}" data-detail-url="${detailUrl}" data-image="${p.image}" data-price-raw="${priceRaw}">
+      <article class="product-card card-hover" data-id="${p.public_id}" data-product-public-id="${p.public_id}" data-detail-url="${detailUrl}" data-image="${p.image}" data-price-raw="${priceRaw}">
         <div class="product-card__media">
           <img src="${p.image}" alt="${p.title}" loading="lazy" referrerpolicy="no-referrer" />
           <span class="product-card__badge product-card__badge--${variant}">${label}</span>
@@ -773,7 +826,7 @@ document.addEventListener('DOMContentLoaded', function() {
           </dl>
         </div>
         <div class="product-card__actions">
-          <button type="button" class="product-card__btn add-to-cart" data-name="${p.title}" data-price="${formatIDR(p.price)}" data-price-raw="${priceRaw}">Tambah Keranjang</button>
+          <button type="button" class="product-card__btn add-to-cart" data-product-public-id="${p.public_id}" data-name="${p.title}" data-price="${formatIDR(p.price)}" data-price-raw="${priceRaw}">Tambah Keranjang</button>
             <a href="${detailUrl}" class="product-card__actionsIcon detail-link" title="Lihat detail">
               <i class="fas fa-eye"></i>
             </a>
@@ -785,28 +838,23 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       if (!productsGrid || !productsLoading) return;
       productsLoading.classList.remove('hidden');
-      const res = await fetch(API_URL);
-      if (!res.ok) throw new Error('Gagal mengambil data produk');
-      const all = await res.json();
+      const res = await apiFetchJson(API_URL);
+      const all = Array.isArray(res?.data) ? res.data : [];
       const filtered = all
         .filter((p) => isSupportedClothingProduct(p.title, p.category))
         .map((p) => normalizeCatalogProduct(p));
 
-      const combined = filtered.concat(mapCustomProducts());
-      combined.sort((a, b) => (isFemalePreferred(b) - isFemalePreferred(a)));
-      dataCache = applyReviewSummaries(combined);
+      filtered.sort((a, b) => (isFemalePreferred(b) - isFemalePreferred(a)));
+      dataCache = filtered;
+
+      await ensureReviewSummaries(dataCache.slice(0, pageSize));
     
       updateTeasersFromProducts();
       productsLoading.classList.add('hidden');
-      renderPage();
+      await renderPage();
     } catch (err) {
-      dataCache = applyReviewSummaries(mapCustomProducts());
-      if (!dataCache.length) {
-        if (productsLoading) productsLoading.textContent = 'Gagal memuat produk. Periksa koneksi internet Anda.';
-      } else {
-        productsLoading.classList.add('hidden');
-        renderPage();
-      }
+      dataCache = [];
+      if (productsLoading) productsLoading.textContent = 'Gagal memuat produk. Silakan coba lagi.';
     }
   }
 
@@ -851,10 +899,22 @@ document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('productDetailModal');
     const wrap = document.getElementById('productDetailContent');
     if (!modal || !wrap) return;
-    const p = dataCache.find(x => String(x.id) === String(id));
+
+    const p = dataCache.find(x => (
+      String(x.public_id) === String(id)
+      || String(x.slug) === String(id)
+      || String(x.uuid) === String(id)
+    ));
     if (!p) return;
-    const rate = p.rating && p.rating.rate ? p.rating.rate : '-';
-    const count = p.rating && p.rating.count ? p.rating.count : '-';
+
+    const productPublicId = String(p.public_id || '').trim();
+    modal.dataset.productId = productPublicId;
+
+    const cachedSummary = reviewSummaryCache[productPublicId];
+    const rate = cachedSummary && cachedSummary.count ? Number(cachedSummary.avg || 0).toFixed(1) : '-';
+    const reviewCount = cachedSummary ? Number(cachedSummary.count || 0) : 0;
+    const stock = typeof p.stock === 'number' ? p.stock : (Number(p.stock) || 0);
+
     const desc = p.description || 'Tidak ada deskripsi.';
     const truncated = desc.length > 350;
     const short = truncated ? desc.slice(0, 350) + '…' : desc;
@@ -874,11 +934,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="flex flex-wrap items-center gap-2 mb-3">
           <span class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">${p.category}</span>
           ${p._type ? `<span class="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">${p._type}</span>` : ''}
-          <span class="ml-auto text-sm text-gray-500 hidden md:inline">ID: ${p.id}</span>
+          <span class="ml-auto text-sm text-gray-500 hidden md:inline">ID: ${p.public_id}</span>
         </div>
         <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
-          <span class="flex items-center gap-1"><span class="text-yellow-500">${stars(rate)}</span><span>${rate}</span></span>
-          <span>Stock: ${count}</span>
+          <span class="flex items-center gap-1"><span id="productDetailStars" class="text-yellow-500">${stars(Number(rate) || 0)}</span><span id="productDetailRatingValue">${rate}</span></span>
+          <span id="productDetailReviewCount">Review: ${reviewCount}</span>
+          <span>Stok: ${stock}</span>
         </div>
         <div class="text-3xl md:text-4xl font-bold text-primary mb-4">${formatIDR(p.price)}</div>
         <div class="text-gray-700 leading-relaxed mb-4" id="productDetailDescription">${short}</div>
@@ -895,20 +956,11 @@ document.addEventListener('DOMContentLoaded', function() {
     [c1, c2].forEach(el => el && el.addEventListener('click', () => modal.classList.add('hidden')));
     const addBtn = document.getElementById('detailAddToCart');
     if (addBtn) {
-      addBtn.addEventListener('click', (e) => {
+      addBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        flashButtonLabel(addBtn, 'Telah Ditambahkan', 2000);
         createRipple(addBtn, e);
-        addItemToCart(
-          {
-            id: String(p.id),
-            name: p.title,
-            priceDisplay: formatIDR(p.price),
-            priceRaw: Math.round(p.price * RATE_IDR),
-            image: p.image || '',
-          },
-          addBtn,
-        );
+        const ok = await addItemToCart({ id: String(p.public_id) }, addBtn);
+        flashButtonLabel(addBtn, ok ? 'Telah Ditambahkan' : 'Gagal', 2000);
       });
     }
     const toggle = document.getElementById('toggleDesc');
@@ -930,6 +982,20 @@ document.addEventListener('DOMContentLoaded', function() {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.add('hidden');
     }, { once: true });
+
+      if (productPublicId) {
+        getReviewSummary(productPublicId).then((summary) => {
+          if (modal.dataset.productId !== productPublicId) return;
+          const starsEl = document.getElementById('productDetailStars');
+          const ratingEl = document.getElementById('productDetailRatingValue');
+          const countEl = document.getElementById('productDetailReviewCount');
+          const avg = summary && summary.count ? Number(summary.avg || 0) : 0;
+          const display = summary && summary.count ? avg.toFixed(1) : '-';
+          if (starsEl) starsEl.textContent = stars(avg);
+          if (ratingEl) ratingEl.textContent = display;
+          if (countEl) countEl.textContent = `Review: ${Number(summary?.count || 0)}`;
+        }).catch(() => {});
+      }
   }
 
   function attachDetailListeners() {
@@ -966,20 +1032,14 @@ document.addEventListener('DOMContentLoaded', function() {
   function attachCartListeners() {
     document.querySelectorAll('.add-to-cart').forEach(btn => {
       if (btn.dataset.bound === '1') return;
-      btn.addEventListener('click', function(e) {
+      btn.addEventListener('click', async function(e) {
         e.preventDefault();
-        flashButtonLabel(btn, 'Telah Ditambahkan', 2000);
         createRipple(btn, e);
         const card = btn.closest('.card-hover');
-        const image = card?.dataset.image || '';
-        const priceRaw = Number(btn.getAttribute('data-price-raw') || card?.dataset.priceRaw || 0);
-        addItemToCart({
-          id: card?.dataset.id || Date.now().toString(),
-          name: btn.getAttribute('data-name'),
-          priceDisplay: btn.getAttribute('data-price'),
-          priceRaw,
-          image
-        }, btn);
+
+        const productId = card?.dataset.productPublicId || card?.dataset.id;
+        const ok = await addItemToCart({ id: String(productId || '') }, btn);
+        flashButtonLabel(btn, ok ? 'Telah Ditambahkan' : 'Gagal', 2000);
       });
       btn.dataset.bound = '1';
     });
@@ -1150,55 +1210,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  let cart = loadCart();
-  updateCartBadge();
-  updateWishlistBadge();
-  updateHeaderUser();
-  window.addEventListener('storage', (event) => {
-    if (event.key === 'wc_profiles_v2') {
-      updateWishlistBadge();
-      updateHeaderUser();
-    }
-    if (event.key === 'wc_logged_in' || event.key === 'wc_active_account') {
-      updateHeaderUser();
-    }
-    if (window.CustomProductStore && event.key === CustomProductStore.STORAGE_KEY) {
-      window.location.reload();
-    }
-    if (window.ReviewStore && event.key === ReviewStore.STORAGE_KEY) {
-      window.location.reload();
-    }
-    if (window.LiveDropStore && event.key === LiveDropStore.STORAGE_KEY) {
-      applyLiveDropSettings();
-    }
-  });
-
-  window.addEventListener('wc-live-drop-updated', () => {
-    applyLiveDropSettings();
-  });
-
-  window.addEventListener('wc-reviews-updated', () => {
-    if (!dataCache.length) return;
-    refreshReviewSummaryCache();
-    dataCache = applyReviewSummaries(dataCache);
-    if (productsGrid) {
-      productsGrid.innerHTML = '';
-      page = 1;
-      if (loadMoreBtn) {
-        loadMoreBtn.classList.remove('hidden');
-      }
-      renderPage();
-    }
-  });
+  // State is API-backed (AuthStore/ProfileStore + /api/cart + /api/reviews + /api/live-drop).
   // Button fallback dihapus karena digantikan listener khusus
   // Tampilan isi keranjang
   const cartBtn = document.getElementById('cartBtn');
   if (cartBtn && cartBtn.dataset.navTarget !== 'cart') {
-    cartBtn.addEventListener('click', function() {
-      const cartItems = document.getElementById('cartItems');
-      if (!cartItems) return;
+    cartBtn.addEventListener('click', async function() {
+      const listEl = document.getElementById('cartItems');
+      if (!listEl) return;
       const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' });
-      cartItems.innerHTML = cart.length === 0 ? '<li>Keranjang kosong.</li>' : cart.map(item => `<li class="mb-2 flex justify-between"><span>${item.name}</span><span class="font-bold text-primary">${item.priceDisplay || formatter.format(item.priceRaw || 0)}</span></li>`).join('');
+
+      const me = await ensureMe();
+      if (!me) {
+        listEl.innerHTML = '<li>Silakan login untuk melihat keranjang.</li>';
+        return;
+      }
+
+      const items = (await fetchCartSafe()) || [];
+      if (!items.length) {
+        listEl.innerHTML = '<li>Keranjang kosong.</li>';
+        return;
+      }
+
+      listEl.innerHTML = items
+        .map((it) => {
+          const name = String(it?.name || 'Produk');
+          const price = formatter.format(Number(it?.price || 0));
+          const qty = Number(it?.quantity || 1);
+          return `<li class="mb-2 flex justify-between"><span>${escapeHTML(name)} <span class="text-xs text-gray-400">x${qty}</span></span><span class="font-bold text-primary">${price}</span></li>`;
+        })
+        .join('');
+      updateCartBadge();
     });
   }
   // Integrated search (uses loaded products + opens detail)
@@ -1212,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const getSearchSource = () => {
     if (Array.isArray(dataCache) && dataCache.length) {
       return dataCache.map((p) => ({
-        id: p.id,
+        id: p.public_id,
         title: p.title,
         category: p._type ? `${p.category} • ${p._type}` : p.category,
         image: p.image,
@@ -1309,7 +1351,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Contact form (body.html) -> admin inbox sync
   const contactForm = document.getElementById('contactForm');
   if (contactForm) {
-    const CONTACT_MESSAGES_KEY = 'wc_contact_messages_v1';
     const statusEl = document.getElementById('contactFormStatus');
     const nameEl = document.getElementById('name');
     const emailEl = document.getElementById('email');
@@ -1330,33 +1371,19 @@ document.addEventListener('DOMContentLoaded', function() {
       else statusEl.classList.add('text-gray-500');
     };
 
-    const readMessages = () => {
-      try {
-        const raw = localStorage.getItem(CONTACT_MESSAGES_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (_) {
-        return [];
-      }
-    };
-
-    const writeMessages = (list) => {
-      localStorage.setItem(CONTACT_MESSAGES_KEY, JSON.stringify(list));
-      try {
-        window.dispatchEvent(new CustomEvent('wc-contact-messages-updated'));
-      } catch (_) {}
-    };
-
     // Prefill from profile if logged in
-    try {
-      if (localStorage.getItem('wc_logged_in') === '1' && window.ProfileStore?.getProfileData) {
+    (async () => {
+      try {
+        const me = await ensureMe();
+        if (!me) return;
+        if (!window.ProfileStore?.getProfileData) return;
         const profile = ProfileStore.getProfileData();
-        if (nameEl && !nameEl.value) nameEl.value = profile.name || '';
-        if (emailEl && !emailEl.value) emailEl.value = profile.email || '';
-      }
-    } catch (_) {}
+        if (nameEl && !nameEl.value) nameEl.value = profile?.name || '';
+        if (emailEl && !emailEl.value) emailEl.value = profile?.email || '';
+      } catch (_) {}
+    })();
 
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       setStatus('', 'info');
 
@@ -1370,40 +1397,36 @@ document.addEventListener('DOMContentLoaded', function() {
         nameEl?.focus?.();
         return;
       }
+      if (!email) {
+        setStatus('Email wajib diisi.', 'error');
+        emailEl?.focus?.();
+        return;
+      }
       if (!message) {
         setStatus('Pesan wajib diisi.', 'error');
         messageEl?.focus?.();
         return;
       }
 
-      let userEmail = '';
       try {
-        if (localStorage.getItem('wc_logged_in') === '1' && window.ProfileStore?.getProfileData) {
-          userEmail = String(ProfileStore.getProfileData()?.email || '').trim();
-        }
-      } catch (_) {}
+        await apiFetchJson('/api/contact-messages', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            email,
+            subject,
+            message,
+            source: 'body.html#contact',
+          }),
+        });
 
-      const payload = {
-        id: `msg-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 6)}`,
-        name,
-        email,
-        subject,
-        message,
-        userEmail,
-        createdAt: new Date().toISOString(),
-        source: 'body.html#contact',
-      };
-
-      try {
-        const list = readMessages();
-        list.unshift(payload);
-        writeMessages(list.slice(0, 200));
         setStatus('Pesan berhasil dikirim. Terima kasih!', 'success');
         if (subjectEl) subjectEl.value = '';
         if (messageEl) messageEl.value = '';
       } catch (err) {
-        console.warn('Gagal menyimpan pesan kontak', err);
-        setStatus('Gagal mengirim pesan. Coba ulangi.', 'error');
+        console.warn('Gagal mengirim pesan kontak', err);
+        const msg = err?.data?.message || err?.message || 'Gagal mengirim pesan. Coba ulangi.';
+        setStatus(msg, 'error');
       }
     });
   }

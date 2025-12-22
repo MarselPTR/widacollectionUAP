@@ -33,7 +33,7 @@
                     </div>
 
                     <div class="flex items-center gap-4 rounded-2xl border border-gray-100 bg-light/40 p-4">
-                        <div class="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl shadow">
+                        <div class="w-16 h-16 rounded-full overflow-hidden bg-linear-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl shadow">
                             <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
                             <span id="editProfileAvatarFallback" data-wc-avatar-fallback>WC</span>
                         </div>
@@ -187,23 +187,26 @@
                 const REDIRECT_KEY = 'wc_login_redirect';
                 const setLoginRedirect = (value) => {
                     try {
-                        localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
                     } catch (_) {}
                 };
                 const currentRelativeUrl = () => {
                     const file = window.location.pathname.split('/').pop() || 'edit-profile.html';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
-                if (localStorage.getItem('wc_logged_in') !== '1') {
-                    setLoginRedirect(currentRelativeUrl());
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                if (!window.ProfileStore || !window.AuthStore) {
-                    alert('Data profil tidak tersedia. Muat ulang halaman.');
-                    return;
-                }
+                (async () => {
+                    if (!window.ProfileStore || !window.AuthStore) {
+                        alert('Data profil tidak tersedia. Muat ulang halaman.');
+                        return;
+                    }
+                    const me = await AuthStore.me();
+                    if (!me) {
+                        const next = currentRelativeUrl();
+                        setLoginRedirect(next);
+                        window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                        return;
+                    }
+                    await ProfileStore.ready;
 
                 const profileForm = document.getElementById('profileForm');
                 const addressForm = document.getElementById('addressForm');
@@ -671,7 +674,7 @@
 
                 addressList.addEventListener('click', handleAddressAction);
 
-                credentialsForm?.addEventListener('submit', (event) => {
+                credentialsForm?.addEventListener('submit', async (event) => {
                     event.preventDefault();
                     const email = credentialsForm.loginEmail.value.trim().toLowerCase();
                     const oldPassword = credentialsForm.oldPassword.value;
@@ -701,19 +704,27 @@
                         credentialsStatus.classList.replace('text-green-600', 'text-red-500');
                         return;
                     }
-                    AuthStore.updateAccountCredentials({
-                        email,
-                        newPassword: newPassword || undefined,
-                        oldPassword: oldPassword || undefined,
-                    });
-                    credentialsStatus.textContent = 'Data login diperbarui.';
-                    credentialsStatus.classList.remove('hidden');
-                    credentialsStatus.classList.remove('text-red-500');
-                    credentialsStatus.classList.add('text-green-600');
-                    setTimeout(() => credentialsStatus.classList.add('hidden'), 3000);
-                    credentialsForm.oldPassword.value = '';
-                    fillProfileForm(ProfileStore.getProfileData(), AuthStore.getAccountData());
-                    fillCredentialsForm(AuthStore.getAccountData());
+                    try {
+                        await AuthStore.updateAccountCredentials({
+                            email,
+                            newPassword: newPassword || undefined,
+                            oldPassword: oldPassword || undefined,
+                        });
+                        await ProfileStore.refresh();
+                        credentialsStatus.textContent = 'Data login diperbarui.';
+                        credentialsStatus.classList.remove('hidden');
+                        credentialsStatus.classList.remove('text-red-500');
+                        credentialsStatus.classList.add('text-green-600');
+                        setTimeout(() => credentialsStatus.classList.add('hidden'), 3000);
+                        credentialsForm.oldPassword.value = '';
+                        fillProfileForm(ProfileStore.getProfileData(), AuthStore.getAccountData());
+                        fillCredentialsForm(AuthStore.getAccountData());
+                    } catch (error) {
+                        credentialsStatus.textContent = error?.message || 'Gagal memperbarui data login.';
+                        credentialsStatus.classList.remove('hidden');
+                        credentialsStatus.classList.remove('text-green-600');
+                        credentialsStatus.classList.add('text-red-500');
+                    }
                 });
 
                 const profile = ProfileStore.getProfileData();
@@ -722,6 +733,7 @@
                 fillCredentialsForm(account);
                 renderAddresses();
                 setupAddressMap();
+                })();
             });
         </script>
     </body>

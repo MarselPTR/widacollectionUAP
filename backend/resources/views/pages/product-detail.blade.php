@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="app.css">
 </head>
 <body class="font-poppins bg-gray-50">
-    <header class="bg-gradient-to-r from-primary via-secondary to-dark text-white">
+    <header class="bg-linear-to-r from-primary via-secondary to-dark text-white">
         <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
                 <p class="text-sm uppercase tracking-[0.4em] text-white/70 wc-reveal" style="--reveal-delay: 40ms;">Detail Produk</p>
@@ -30,7 +30,7 @@
 
     <main class="max-w-6xl mx-auto px-4 py-10 space-y-10">
         <section class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-10 grid lg:grid-cols-2 gap-8">
-            <div class="bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 flex items-center justify-center">
+            <div class="bg-linear-to-br from-gray-50 to-white rounded-2xl p-6 flex items-center justify-center">
                 <img id="detailImage" src="" alt="Detail produk" class="w-full h-96 object-contain" loading="lazy">
             </div>
             <div class="flex flex-col gap-5">
@@ -98,7 +98,7 @@
                     <li class="flex gap-3"><i class="fas fa-circle-check text-primary mt-1"></i><span>Standar kurasi Wida Collection</span></li>
                     <li class="flex gap-3"><i class="fas fa-circle-check text-primary mt-1"></i><span>Bonus dust bag eksklusif</span></li>
                 </ul>
-                <div class="bg-gradient-to-br from-secondary to-primary text-white rounded-2xl p-5 space-y-2">
+                <div class="bg-linear-to-br from-secondary to-primary text-white rounded-2xl p-5 space-y-2">
                     <p class="text-sm uppercase tracking-[0.3em] text-white/70">Live Drop Picks</p>
                     <p class="text-2xl font-semibold">Masuk ke wishlistmu sebelum sesi berikutnya!</p>
                     <a href="body.html#live-drop" class="inline-flex items-center gap-2 underline font-semibold">Lihat jadwal <i class="fas fa-arrow-up-right-from-square"></i></a>
@@ -108,15 +108,12 @@
     </main>
 
     <script src="js/reveal.js" defer></script>
-    <script src="js/review-store.js"></script>
-    <script src="js/custom-products.js"></script>
     <script src="js/profile-data.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const params = new URLSearchParams(window.location.search);
         const productId = params.get('id') || '1';
-        const API_URL = `https://fakestoreapi.com/products/${productId}`;
-        const RATE_IDR = 16000;
+        const API_URL = `/api/products/${encodeURIComponent(productId)}`;
 
         const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' });
         const escapeHTML = (value = '') => String(value ?? '')
@@ -125,20 +122,30 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
         const el = (id) => document.getElementById(id);
-        const CART_KEY = 'wc_cart_items';
-        const loadCart = () => {
+        const apiFetchJson = async (url, options = {}) => {
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                },
+                ...options,
+            });
+            let data = null;
             try {
-                const raw = localStorage.getItem(CART_KEY);
-                const parsed = raw ? JSON.parse(raw) : [];
-                return Array.isArray(parsed) ? parsed : [];
+                data = await res.json();
             } catch (_) {
-                return [];
+                data = null;
             }
-        };
-        const addItemToCart = (item) => {
-            const curr = loadCart();
-            curr.push(item);
-            localStorage.setItem(CART_KEY, JSON.stringify(curr));
+            if (!res.ok) {
+                const message = data?.message || `Request failed (${res.status})`;
+                const err = new Error(message);
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
         };
 
         const flashButtonLabel = (btn, label, restoreHtml, durationMs = 2000) => {
@@ -153,63 +160,38 @@
             btn.dataset.wcLabelTimer = String(timerId);
         };
 
-        function ensureLogin(action, redirectTo) {
-            if (localStorage.getItem('wc_logged_in') === '1') return true;
+        async function ensureLogin(action, redirectTo) {
+            if (!window.AuthStore) {
+                alert('Sistem auth belum siap. Muat ulang halaman.');
+                return false;
+            }
+            const me = await AuthStore.me();
+            if (me) return true;
+
+            const file = window.location.pathname.split('/').pop() || 'product-detail.html';
+            const current = `${file}${window.location.search || ''}${window.location.hash || ''}`;
+            const next = String(redirectTo || current);
             try {
-                const file = window.location.pathname.split('/').pop() || 'product-detail.html';
-                const current = `${file}${window.location.search || ''}${window.location.hash || ''}`;
-                localStorage.setItem('wc_login_redirect', String(redirectTo || current));
+                sessionStorage.setItem('wc_login_redirect', next);
             } catch (_) {}
             alert('Silakan login terlebih dahulu untuk ' + action + '.');
-            window.location.href = 'login.html';
+            window.location.href = `login.html?next=${encodeURIComponent(next)}`;
             return false;
         }
 
         const goToCartBtn = document.getElementById('goToCartBtn');
-        goToCartBtn?.addEventListener('click', (e) => {
+        goToCartBtn?.addEventListener('click', async (e) => {
             e.preventDefault();
-            if (!ensureLogin('melihat keranjang', 'cart.html')) return;
+            if (!(await ensureLogin('melihat keranjang', 'cart.html'))) return;
             window.location.href = 'cart.html';
         });
 
-        const loadCustomProduct = (id) => {
-            if (!window.CustomProductStore || typeof CustomProductStore.findById !== 'function') return null;
-            try {
-                return CustomProductStore.findById(id);
-            } catch (_) {
-                return null;
-            }
-        };
-
-        const getReviewSummary = (id) => {
-            if (!window.ReviewStore || typeof ReviewStore.getSummary !== 'function') {
-                return { avg: 0, count: 0 };
-            }
-            try {
-                return ReviewStore.getSummary(id) || { avg: 0, count: 0 };
-            } catch (_) {
-                return { avg: 0, count: 0 };
-            }
-        };
-
-        const getProductReviews = (id) => {
-            if (!window.ReviewStore || typeof ReviewStore.getByProduct !== 'function') {
-                return [];
-            }
-            try {
-                return ReviewStore.getByProduct(id);
-            } catch (_) {
-                return [];
-            }
-        };
-
-        const formatReviewDate = (value) => {
-            if (!value) return '';
-            try {
-                return new Date(value).toLocaleDateString('id-ID');
-            } catch (_) {
-                return '';
-            }
+        const computeReviewSummary = (reviews) => {
+            const list = Array.isArray(reviews) ? reviews : [];
+            const count = list.length;
+            const sum = list.reduce((acc, r) => acc + (Number(r?.rating) || 0), 0);
+            const avg = count ? sum / count : 0;
+            return { avg, count };
         };
 
         const MENS_GROUP = 'Mens Clothing';
@@ -249,14 +231,11 @@
 
         const hydrateProduct = (product) => {
             lastProduct = product;
-            const priceBase = Number(product.price) || 0;
-            const priceIdr = Math.round(priceBase * RATE_IDR);
-            const ratingObj = product.rating || {};
-            const summary = getReviewSummary(product.id);
-            const ratingValue = summary.count ? summary.avg : (ratingObj.rate || 0);
-            const reviewCount = summary.count || ratingObj.count || 0;
-            const group = normalizeGroup(product.category, product.title);
-            const subType = normalizeType(product.type || product._type || '', product.title, group);
+            const priceIdr = Number(product.price) || 0;
+            const ratingValue = 0;
+            const reviewCount = 0;
+            const group = String(product.category || 'Produk');
+            const subType = String(product.type || 'Item');
             el('detailTitle').textContent = group;
             el('detailCategory').textContent = `${group} • ${subType}`;
             el('detailName').textContent = product.title;
@@ -264,88 +243,62 @@
             el('detailPrice').textContent = formatter.format(priceIdr);
             el('detailRating').textContent = Number(ratingValue || 0).toFixed(1);
             el('detailReviewCount').textContent = `${reviewCount} ulasan`;
-            el('detailStock').textContent = product.stock || reviewCount || '-';
+            el('detailStock').textContent = typeof product.stock === 'number' ? String(product.stock) : (product.stock ?? '-');
             el('detailImage').src = product.image;
             el('detailImage').alt = product.title;
             el('detailType').textContent = subType;
-            el('detailSku').textContent = `SKU: WC-${String(product.id).padStart(4, '0')}`;
+            el('detailSku').textContent = `SKU: ${product.public_id || product.slug || product.uuid || '-'}`;
 
             const highlights = [
                 `${product.title.split(' ').slice(0, 3).join(' ')} pilihan kurator`,
                 `Rating ${Number(ratingValue || 0).toFixed(1)} / 5 dari ${reviewCount} ulasan`,
-                `Stok disiapkan: ${product.stock || reviewCount || '-'}`,
+                `Stok disiapkan: ${product.stock ?? '-'}`,
             ];
             const highlightList = document.getElementById('highlightList');
             highlightList.innerHTML = highlights.map(text => `<li class="flex gap-3"><i class="fas fa-circle-check text-primary mt-1"></i><span>${text}</span></li>`).join('');
 
-            const reviewList = document.getElementById('reviewList');
-            const reviews = getProductReviews(product.id);
-            if (!reviews.length) {
-                reviewList.innerHTML = `
-                    <article class="p-5 rounded-2xl border border-dashed border-gray-200 text-center">
-                        <p class="text-sm text-gray-500 mb-3">Belum ada ulasan terverifikasi untuk produk ini. Setelah pesananmu tiba, tuliskan pengalaman melalui halaman Pesanan.</p>
-                        <a href="orders.html" class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary text-primary font-semibold hover:bg-primary/5 transition">Buka Halaman Pesanan <i class="fas fa-arrow-right"></i></a>
-                    </article>`;
-            } else {
-                reviewList.innerHTML = reviews.map((review) => {
-                    const ratingValue = Math.min(5, Math.max(0, Math.round(Number(review.rating) || 0)));
-                    const stars = '★'.repeat(ratingValue) + '☆'.repeat(5 - ratingValue);
-                    return `
-                        <article class="p-4 rounded-2xl border border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="font-semibold text-dark">${escapeHTML(review.author || 'Pelanggan')}</p>
-                                    <p class="text-xs text-gray-400">${escapeHTML(review.email || '')} · ${formatReviewDate(review.createdAt)}</p>
-                                </div>
-                                <span class="text-yellow-400 font-semibold">${stars}</span>
-                            </div>
-                            <p class="text-gray-600 mt-3">${escapeHTML(review.comment)}</p>
-                        </article>`;
-                }).join('');
-            }
+            // Reviews are loaded from API after product render.
 
             document.title = `${product.title} - Detail Produk`;
 
-            el('detailAddCart').onclick = () => {
-                if (!ensureLogin('menambahkan ke keranjang')) return;
-                addItemToCart({
-                    id: product.id,
-                    name: product.title,
-                    priceDisplay: formatter.format(priceIdr),
-                    priceRaw: priceIdr,
-                    image: product.image,
-                    qty: 1,
-                });
-                window.location.href = 'cart.html';
-            };
-            el('detailBuyNow').onclick = () => {
-                const BUY_NOW_KEY = 'wc_buy_now_items_v1';
+            el('detailAddCart').onclick = async () => {
+                if (!(await ensureLogin('menambahkan ke keranjang'))) return;
                 try {
-                    localStorage.setItem(
-                        BUY_NOW_KEY,
-                        JSON.stringify([
-                            {
-                                id: product.id,
-                                name: product.title,
-                                priceDisplay: formatter.format(priceIdr),
-                                priceRaw: priceIdr,
-                                image: product.image,
-                                qty: 1,
-                            },
-                        ]),
-                    );
-                } catch (_) {}
-                if (!ensureLogin('melanjutkan pembelian', 'checkout.html')) return;
-                window.location.href = 'checkout.html';
+                    await apiFetchJson('/api/cart/items', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            product_id: product.public_id,
+                            quantity: 1,
+                        }),
+                    });
+                    window.location.href = 'cart.html';
+                } catch (error) {
+                    alert(error?.message || 'Gagal menambahkan ke keranjang.');
+                }
+            };
+            el('detailBuyNow').onclick = async () => {
+                if (!(await ensureLogin('melanjutkan pembelian', 'checkout.html'))) return;
+                try {
+                    await apiFetchJson('/api/cart/items', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            product_id: product.public_id,
+                            quantity: 1,
+                        }),
+                    });
+                    window.location.href = 'checkout.html';
+                } catch (error) {
+                    alert(error?.message || 'Gagal melanjutkan pembelian.');
+                }
             };
 
-            const wishlistRef = `product-${product.id}`;
+            const wishlistRef = String(product.public_id || '');
             const wishlistBtn = el('detailWishlist');
             const getWishlistSnapshot = () => {
                 if (!window.ProfileStore || typeof ProfileStore.getWishlist !== 'function') return [];
                 return ProfileStore.getWishlist();
             };
-            const findWishlistItem = () => getWishlistSnapshot().find((item) => item.refId === wishlistRef) || null;
+            const findWishlistItem = () => getWishlistSnapshot().find((item) => String(item.refId) === wishlistRef) || null;
             const setWishlistState = (exists) => {
                 if (!wishlistBtn) return;
                 if (exists) {
@@ -358,56 +311,102 @@
                     wishlistBtn.innerHTML = '<i class="fas fa-heart"></i> Simpan Wishlist';
                 }
             };
-            setWishlistState(Boolean(findWishlistItem()));
+            setWishlistState(false);
 
-            wishlistBtn?.addEventListener('click', () => {
-                if (!ensureLogin('menyimpan wishlist')) return;
+            const refreshWishlistState = async () => {
+                if (!window.AuthStore || !window.ProfileStore) return;
+                const me = await AuthStore.me();
+                if (!me) {
+                    setWishlistState(false);
+                    return;
+                }
+                await ProfileStore.refresh();
+                setWishlistState(Boolean(findWishlistItem()));
+            };
+
+            refreshWishlistState();
+
+            wishlistBtn?.addEventListener('click', async () => {
+                if (!(await ensureLogin('menyimpan wishlist'))) return;
                 if (!window.ProfileStore || typeof ProfileStore.upsertWishlistItem !== 'function') {
                     alert('Fitur wishlist belum siap. Muat ulang halaman.');
                     return;
                 }
                 const existing = findWishlistItem();
-                if (existing) {
-                    ProfileStore.removeWishlistItem(existing.id);
-                    setWishlistState(false);
-                    return;
-                }
-                ProfileStore.upsertWishlistItem({
-                    refId: wishlistRef,
-                    title: product.title,
-                    note: `${group} • ${subType} • SKU WC-${String(product.id).padStart(4, '0')}`,
-                    price: priceIdr,
-                    badge: 'Wishlist',
-                    priority: 'high',
-                    image: product.image,
-                    status: 'waiting',
-                });
-                setWishlistState(true);
+                try {
+                    if (existing) {
+                        await ProfileStore.removeWishlistItem(existing.id);
+                        setWishlistState(false);
+                        return;
+                    }
+                    await ProfileStore.upsertWishlistItem({
+                        refId: wishlistRef,
+                        title: product.title,
+                    });
+                    setWishlistState(true);
 
-                // Show a short confirmation label, then restore the correct state label.
-                const restoreHtml = wishlistBtn ? wishlistBtn.innerHTML : '';
-                flashButtonLabel(wishlistBtn, 'Telah Ditambahkan', restoreHtml, 2000);
+                    const restoreHtml = wishlistBtn ? wishlistBtn.innerHTML : '';
+                    flashButtonLabel(wishlistBtn, 'Telah Ditambahkan', restoreHtml, 2000);
+                } catch (error) {
+                    alert(error?.message || 'Gagal menyimpan wishlist.');
+                }
             });
         };
 
         try {
-            const customProduct = loadCustomProduct(productId);
-            if (customProduct) {
-                hydrateProduct(customProduct);
-                window.addEventListener('wc-reviews-updated', () => hydrateProduct(lastProduct));
-                return;
-            }
-
-            const res = await fetch(API_URL);
-            if (!res.ok) throw new Error('Produk tidak ditemukan');
-            const product = await res.json();
+            const productRes = await apiFetchJson(API_URL);
+            const product = productRes?.data;
+            if (!product) throw new Error('Produk tidak ditemukan');
 
             hydrateProduct(product);
-            window.addEventListener('wc-reviews-updated', () => {
-                if (lastProduct) {
-                    hydrateProduct(lastProduct);
+
+            // Load reviews from API
+            const reviewList = document.getElementById('reviewList');
+            try {
+                const reviewsRes = await apiFetchJson(`/api/reviews?product_id=${encodeURIComponent(String(product.public_id || ''))}`);
+                const reviews = Array.isArray(reviewsRes?.data) ? reviewsRes.data : [];
+
+                const summary = computeReviewSummary(reviews);
+                el('detailRating').textContent = Number(summary.avg || 0).toFixed(1);
+                el('detailReviewCount').textContent = `${Number(summary.count || 0)} ulasan`;
+
+                const highlightList = document.getElementById('highlightList');
+                if (highlightList) {
+                    const highlights = [
+                        `${product.title.split(' ').slice(0, 3).join(' ')} pilihan kurator`,
+                        `Rating ${Number(summary.avg || 0).toFixed(1)} / 5 dari ${Number(summary.count || 0)} ulasan`,
+                        `Stok disiapkan: ${product.stock ?? '-'}`,
+                    ];
+                    highlightList.innerHTML = highlights.map(text => `<li class="flex gap-3"><i class="fas fa-circle-check text-primary mt-1"></i><span>${text}</span></li>`).join('');
                 }
-            });
+
+                if (!reviews.length) {
+                    reviewList.innerHTML = `
+                        <article class="p-5 rounded-2xl border border-dashed border-gray-200 text-center">
+                            <p class="text-sm text-gray-500 mb-3">Belum ada ulasan terverifikasi untuk produk ini. Setelah pesananmu tiba, tuliskan pengalaman melalui halaman Pesanan.</p>
+                            <a href="orders.html" class="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary text-primary font-semibold hover:bg-primary/5 transition">Buka Halaman Pesanan <i class="fas fa-arrow-right"></i></a>
+                        </article>`;
+                } else {
+                    reviewList.innerHTML = reviews.map((review) => {
+                        const ratingValue = Math.min(5, Math.max(0, Math.round(Number(review.rating) || 0)));
+                        const stars = '★'.repeat(ratingValue) + '☆'.repeat(5 - ratingValue);
+                        const reviewedAt = review.reviewed_at || review.created_at;
+                        return `
+                            <article class="p-4 rounded-2xl border border-gray-100">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <p class="font-semibold text-dark">${escapeHTML(review.author || 'Pelanggan')}</p>
+                                        <p class="text-xs text-gray-400">${escapeHTML(review.email || '')} · ${escapeHTML(reviewedAt ? new Date(reviewedAt).toLocaleDateString('id-ID') : '')}</p>
+                                    </div>
+                                    <span class="text-yellow-400 font-semibold">${stars}</span>
+                                </div>
+                                <p class="text-gray-600 mt-3">${escapeHTML(review.comment || '')}</p>
+                            </article>`;
+                    }).join('');
+                }
+            } catch (_) {
+                // keep empty state
+            }
         } catch (err) {
             alert(err.message || 'Terjadi kesalahan memuat detail produk.');
             window.location.href = 'body.html';

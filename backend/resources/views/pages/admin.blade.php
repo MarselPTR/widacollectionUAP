@@ -92,7 +92,7 @@
                         </select>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
-                        Harga (USD)
+                        Harga
                         <input type="number" min="0" step="0.01" name="price" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
@@ -162,10 +162,6 @@
     </main>
 
     <script src="js/profile-data.js"></script>
-    <script src="js/review-store.js"></script>
-    <script src="js/order-store.js"></script>
-    <script src="js/live-drop-store.js"></script>
-    <script src="js/custom-products.js"></script>
     <script src="js/reveal.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -173,36 +169,18 @@
                 const REDIRECT_KEY = 'wc_login_redirect';
                 const setLoginRedirect = (value) => {
                     try {
-                        localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
                     } catch (_) {}
                 };
                 const currentRelativeUrl = () => {
                     const file = window.location.pathname.split('/').pop() || 'admin.html';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
-                if (!window.AuthStore || typeof AuthStore.isLoggedIn !== 'function') {
-                    alert('Sistem auth belum siap. Muat ulang halaman.');
-                    window.location.href = 'login.html';
-                    return false;
-                }
-                if (!AuthStore.isLoggedIn()) {
-                    setLoginRedirect(currentRelativeUrl());
-                    window.location.href = 'login.html';
-                    return false;
-                }
-                if (typeof AuthStore.isAdmin !== 'function' || !AuthStore.isAdmin()) {
-                    alert('Halaman ini khusus admin Wida Collection.');
-                    window.location.href = 'body.html';
-                    return false;
-                }
-                return true;
+                return { setLoginRedirect, currentRelativeUrl };
             };
 
-            if (!ensureAdminAccess()) return;
-            if (!window.CustomProductStore) {
-                alert('Store produk belum siap. Muat ulang halaman.');
-                return;
-            }
+            const { setLoginRedirect, currentRelativeUrl } = ensureAdminAccess();
+
             const form = document.getElementById('productForm');
             const table = document.getElementById('productTable');
             const totalBadge = document.getElementById('customTotal');
@@ -215,16 +193,52 @@
             const liveDropForm = document.getElementById('liveDropForm');
             const liveDropStatus = document.getElementById('liveDropStatus');
             const liveDropReset = document.getElementById('liveDropReset');
-            const hasLiveDropStore = !!(window.LiveDropStore && typeof LiveDropStore.getSettings === 'function');
-            const liveDropDefaults = hasLiveDropStore ? (LiveDropStore.defaultSettings || {}) : {};
-            const getReviewSummary = (productId) => {
-                if (!window.ReviewStore || typeof ReviewStore.getSummary !== 'function') {
-                    return { avg: 0, count: 0 };
+
+            const apiFetchJson = async (url, options = {}) => {
+                const res = await fetch(url, {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {}),
+                    },
+                    ...options,
+                });
+                const data = await res.json().catch(() => null);
+                if (!res.ok) {
+                    const err = new Error(data?.message || `Request failed (${res.status})`);
+                    err.status = res.status;
+                    err.data = data;
+                    throw err;
                 }
+                return data;
+            };
+
+            const liveDropDefaults = {
+                heroTitle: 'Buka Bal Selanjutnya',
+                heroDescription: 'Jangan lewatkan sesi buka bal eksklusif kami via TikTok Live dengan penawaran spesial!',
+                eventTitle: 'Buka Bal Spesial Kaos Band Vintage',
+                eventSubtitle: 'Sabtu, 15 Juli 2023 - Pukul 20:00 WIB',
+                eventDateTime: '',
+                ctaLabel: 'Ingatkan Saya',
+            };
+
+            const reviewSummaryCache = new Map();
+            const getReviewSummary = async (productPublicId) => {
+                if (!productPublicId) return { avg: 0, count: 0 };
+                if (reviewSummaryCache.has(productPublicId)) return reviewSummaryCache.get(productPublicId);
                 try {
-                    return ReviewStore.getSummary(productId) || { avg: 0, count: 0 };
+                    const res = await apiFetchJson(`/api/reviews?product_id=${encodeURIComponent(productPublicId)}`);
+                    const rows = Array.isArray(res?.data) ? res.data : [];
+                    const count = rows.length;
+                    const avg = count ? rows.reduce((acc, r) => acc + (Number(r.rating) || 0), 0) / count : 0;
+                    const summary = { avg, count };
+                    reviewSummaryCache.set(productPublicId, summary);
+                    return summary;
                 } catch (_) {
-                    return { avg: 0, count: 0 };
+                    const summary = { avg: 0, count: 0 };
+                    reviewSummaryCache.set(productPublicId, summary);
+                    return summary;
                 }
             };
 
@@ -295,11 +309,11 @@
             };
 
             const fillForm = (product) => {
-                form.productId.value = product.id;
+                form.productId.value = product.uuid;
                 form.title.value = product.title;
                 const group = normalizeGroup(product.category, product.title);
                 form.category.value = group;
-                form.price.value = product.price;
+                form.price.value = Number(product.price) || 0;
                 form.stock.value = product.stock || 0;
                 form.image.value = product.image;
                 renderTypeOptions(group, normalizeType(product.type, product.title, group));
@@ -334,39 +348,46 @@
                 liveDropStatus.classList.add(variant === 'error' ? 'text-red-500' : 'text-green-600');
             };
 
-            const hydrateLiveDropForm = () => {
-                if (!hasLiveDropStore || !liveDropForm) return;
+            const hydrateLiveDropForm = async () => {
+                if (!liveDropForm) return;
                 try {
-                    const settings = LiveDropStore.getSettings();
-                    liveDropForm.heroTitle.value = settings.heroTitle || liveDropDefaults.heroTitle || '';
-                    liveDropForm.heroDescription.value = settings.heroDescription || liveDropDefaults.heroDescription || '';
-                    liveDropForm.eventTitle.value = settings.eventTitle || liveDropDefaults.eventTitle || '';
-                    liveDropForm.eventSubtitle.value = settings.eventSubtitle || '';
-                    liveDropForm.eventDateTime.value = toInputDateTimeValue(settings.eventDateTime || liveDropDefaults.eventDateTime);
-                    liveDropForm.ctaLabel.value = settings.ctaLabel || liveDropDefaults.ctaLabel || '';
+                    const res = await apiFetchJson('/api/live-drop');
+                    const row = res?.data || {};
+                    liveDropForm.heroTitle.value = row.hero_title || liveDropDefaults.heroTitle || '';
+                    liveDropForm.heroDescription.value = row.hero_description || liveDropDefaults.heroDescription || '';
+                    liveDropForm.eventTitle.value = row.event_title || liveDropDefaults.eventTitle || '';
+                    liveDropForm.eventSubtitle.value = row.event_subtitle || liveDropDefaults.eventSubtitle || '';
+                    liveDropForm.eventDateTime.value = toInputDateTimeValue(row.event_date_time || liveDropDefaults.eventDateTime);
+                    liveDropForm.ctaLabel.value = row.cta_label || liveDropDefaults.ctaLabel || '';
+                    setLiveDropStatus('', 'success');
                 } catch (error) {
                     console.error('Gagal memuat Live Drop settings', error);
                     setLiveDropStatus('Gagal memuat pengaturan live drop.', 'error');
                 }
             };
 
-            const disableLiveDropForm = () => {
-                if (!liveDropForm) return;
-                liveDropForm.querySelectorAll('input, textarea, button').forEach((el) => {
-                    el.disabled = true;
-                });
-                setLiveDropStatus('Store jadwal belum siap. Muat ulang halaman.', 'error');
+            const productsState = { list: [] };
+
+            const loadProducts = async () => {
+                const res = await apiFetchJson('/api/admin/products');
+                productsState.list = Array.isArray(res?.data) ? res.data : [];
             };
 
-            const renderTable = () => {
-                const list = CustomProductStore.getAll();
+            const loadOrdersAdmin = async () => {
+                const res = await apiFetchJson('/api/admin/orders');
+                return Array.isArray(res?.data) ? res.data : [];
+            };
+
+            const renderTable = async () => {
+                const list = Array.isArray(productsState.list) ? productsState.list : [];
                 totalBadge.textContent = `${list.length} item`;
                 if (!list.length) {
                     table.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-gray-400">Belum ada produk kustom.</td></tr>';
                     return;
                 }
-                table.innerHTML = list.map((product) => {
-                    const summary = getReviewSummary(product.id);
+                const summaries = await Promise.all(list.map((p) => getReviewSummary(p.public_id)));
+                table.innerHTML = list.map((product, idx) => {
+                    const summary = summaries[idx] || { avg: 0, count: 0 };
                     const rate = Number(summary.avg || 0).toFixed(1);
                     const count = summary.count || 0;
                     const group = normalizeGroup(product.category, product.title);
@@ -375,11 +396,11 @@
                     <tr>
                         <td class="py-2 pr-4 font-semibold text-dark">${escapeHTML(product.title)}</td>
                         <td class="py-2 pr-4 text-gray-500">${escapeHTML(group)} • ${escapeHTML(type)}</td>
-                        <td class="py-2 pr-4 text-primary font-semibold">$${product.price.toFixed(2)}</td>
+                        <td class="py-2 pr-4 text-primary font-semibold">${escapeHTML(formatCurrency(product.price))}</td>
                         <td class="py-2 pr-4 text-gray-500">${rate} (${count})</td>
                         <td class="py-2 pr-4 space-x-3">
-                            <button data-action="edit" data-id="${product.id}" class="text-sm text-primary font-semibold">Edit</button>
-                            <button data-action="delete" data-id="${product.id}" class="text-sm text-red-500 font-semibold">Hapus</button>
+                            <button data-action="edit" data-id="${product.uuid}" class="text-sm text-primary font-semibold">Edit</button>
+                            <button data-action="delete" data-id="${product.uuid}" class="text-sm text-red-500 font-semibold">Hapus</button>
                         </td>
                     </tr>
                 `;
@@ -388,81 +409,8 @@
 
             const renderOrdersAdmin = () => {
                 if (!ordersAdminTable || !ordersAdminTotal) return;
-                if (!window.OrderStore || typeof OrderStore.getAllAdmin !== 'function') {
-                    ordersAdminTotal.textContent = '0 pesanan';
-                    ordersAdminTable.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-gray-400">Order store belum siap.</td></tr>';
-                    return;
-                }
-
-                const ADMIN_HIDDEN_KEY = 'wc_orders_admin_hidden_v1';
-                const makeHiddenId = (email, id) => `${String(email || '').trim().toLowerCase()}::${String(id || '').trim()}`;
-                const readHiddenSet = () => {
-                    try {
-                        const raw = localStorage.getItem(ADMIN_HIDDEN_KEY);
-                        const parsed = raw ? JSON.parse(raw) : [];
-                        const list = Array.isArray(parsed) ? parsed : [];
-                        return new Set(list.map(String));
-                    } catch (_) {
-                        return new Set();
-                    }
-                };
-                const writeHiddenSet = (set) => {
-                    try {
-                        localStorage.setItem(ADMIN_HIDDEN_KEY, JSON.stringify(Array.from(set)));
-                    } catch (_) {}
-                };
-
-                const hiddenSet = readHiddenSet();
-                const allOrders = OrderStore.getAllAdmin();
-                const orders = allOrders.filter((order) => {
-                    const email = order.customerEmail || '';
-                    return !hiddenSet.has(makeHiddenId(email, order.id));
-                });
-                ordersAdminTotal.textContent = `${orders.length} pesanan`;
-
-                if (!orders.length) {
-                    ordersAdminTable.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-gray-400">Belum ada pesanan masuk.</td></tr>';
-                    return;
-                }
-
-                const statusLabel = (status) => {
-                    if (window.OrderStore?.STATUS_LABEL && OrderStore.STATUS_LABEL[status]) return OrderStore.STATUS_LABEL[status];
-                    if (status === 'packed') return 'Dikemas';
-                    if (status === 'delivered') return 'Diterima';
-                    return 'Dalam pengiriman';
-                };
-
-                const qtyFromItems = (items) => {
-                    const list = Array.isArray(items) ? items : [];
-                    return list.reduce((acc, item) => acc + (Number(item.quantity || item.qty || 0) || 0), 0) || 1;
-                };
-
-                ordersAdminTable.innerHTML = orders
-                    .map((order) => {
-                        const canShip = order.status === 'packed';
-                        const canHide = order.status === 'delivered';
-                        const qty = qtyFromItems(order.items);
-                        const customer = order.customerEmail || '-';
-                        const shipBtn = canShip
-                            ? `<button data-action="ship" data-email="${escapeHTML(customer)}" data-id="${escapeHTML(order.id)}" class="text-sm font-semibold text-white bg-secondary px-4 py-1.5 rounded-full hover:bg-secondary/90">Tandai Dikirim</button>`
-                            : '';
-                        const hideBtn = canHide
-                            ? `<button data-action="hide" data-email="${escapeHTML(customer)}" data-id="${escapeHTML(order.id)}" class="text-sm font-semibold text-red-500 border border-red-200 px-4 py-1.5 rounded-full hover:bg-red-50">Hapus (Admin)</button>`
-                            : '';
-                        const actions = (shipBtn || hideBtn) ? `${shipBtn}${shipBtn && hideBtn ? ' ' : ''}${hideBtn}` : '<span class="text-xs text-gray-400">-</span>';
-                        return `
-                            <tr>
-                                <td class="py-2 pr-4 font-semibold text-dark">#${escapeHTML(order.id)}</td>
-                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(customer)}</td>
-                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(order.productTitle || 'Produk Wida Collection')}</td>
-                                <td class="py-2 pr-4 text-gray-500">${qty}</td>
-                                <td class="py-2 pr-4 text-primary font-semibold">${escapeHTML(formatCurrency(order.price))}</td>
-                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(statusLabel(order.status))}</td>
-                                <td class="py-2 pr-4">${actions}</td>
-                            </tr>
-                        `;
-                    })
-                    .join('');
+                ordersAdminTotal.textContent = 'Memuat...';
+                ordersAdminTable.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-gray-400">Memuat pesanan...</td></tr>';
             };
 
             table.addEventListener('click', (event) => {
@@ -470,13 +418,20 @@
                 if (!btn) return;
                 const { action, id } = btn.dataset;
                 if (action === 'edit') {
-                    const product = CustomProductStore.findById(id);
+                    const product = (productsState.list || []).find((p) => p.uuid === id);
                     if (product) fillForm(product);
                 }
                 if (action === 'delete') {
                     if (!confirm('Hapus produk ini?')) return;
-                    CustomProductStore.remove(id);
-                    renderTable();
+                    (async () => {
+                        try {
+                            await apiFetchJson(`/api/admin/products/${encodeURIComponent(id)}`, { method: 'DELETE' });
+                            await loadProducts();
+                            await renderTable();
+                        } catch (error) {
+                            alert(error?.data?.message || error?.message || 'Gagal menghapus produk.');
+                        }
+                    })();
                     if (form.productId.value === id) clearForm();
                 }
             });
@@ -485,128 +440,197 @@
                 const btn = event.target.closest('button[data-action]');
                 if (!btn) return;
                 const action = btn.dataset.action;
-                const email = btn.dataset.email;
-                const id = btn.dataset.id;
-                if (!email || !id) return;
+                const uuid = btn.dataset.id;
+                if (!uuid) return;
 
-                if (action === 'ship') {
-                    const updated = OrderStore.markShipped(email, id);
-                    if (!updated) {
-                        alert('Gagal mengubah status. Pastikan status masih "Dikemas".');
-                        return;
-                    }
-                    renderOrdersAdmin();
-                    return;
-                }
-
-                if (action === 'hide') {
-                    if (!confirm('Hapus pesanan ini dari dashboard admin? (Riwayat user tetap ada)')) return;
+                (async () => {
                     try {
-                        const ADMIN_HIDDEN_KEY = 'wc_orders_admin_hidden_v1';
-                        const makeHiddenId = (em, oid) => `${String(em || '').trim().toLowerCase()}::${String(oid || '').trim()}`;
-                        const raw = localStorage.getItem(ADMIN_HIDDEN_KEY);
-                        const parsed = raw ? JSON.parse(raw) : [];
-                        const list = Array.isArray(parsed) ? parsed.map(String) : [];
-                        const set = new Set(list);
-                        set.add(makeHiddenId(email, id));
-                        localStorage.setItem(ADMIN_HIDDEN_KEY, JSON.stringify(Array.from(set)));
-                    } catch (_) {}
-                    renderOrdersAdmin();
-                }
+                        if (action === 'ship') {
+                            await apiFetchJson(`/api/admin/orders/${encodeURIComponent(uuid)}/ship`, { method: 'PATCH', body: JSON.stringify({}) });
+                        } else if (action === 'deliver') {
+                            await apiFetchJson(`/api/admin/orders/${encodeURIComponent(uuid)}/deliver`, { method: 'PATCH' });
+                        } else {
+                            return;
+                        }
+                        await refreshOrdersAdmin();
+                    } catch (error) {
+                        alert(error?.data?.message || error?.message || 'Gagal mengubah status pesanan.');
+                    }
+                })();
             });
 
             form.addEventListener('submit', (event) => {
                 event.preventDefault();
                 const group = normalizeGroup(form.category.value, form.title.value);
                 const type = normalizeType(form.type.value, form.title.value, group);
-                const data = {
-                    id: form.productId.value || undefined,
-                    title: form.title.value,
+                const uuid = String(form.productId.value || '').trim();
+                const payload = {
+                    title: String(form.title.value || '').trim(),
                     category: group,
-                    price: Number(form.price.value),
-                    stock: Number(form.stock.value),
-                    image: form.image.value,
                     type,
-                    description: form.description.value,
+                    image: String(form.image.value || '').trim(),
+                    price: Math.max(0, parseInt(form.price.value || '0', 10) || 0),
+                    stock: Math.max(0, parseInt(form.stock.value || '0', 10) || 0),
+                    description: String(form.description.value || '').trim(),
                 };
-                CustomProductStore.save(data);
-                statusEl.textContent = 'Produk tersimpan.';
-                statusEl.classList.remove('hidden', 'text-red-500');
-                statusEl.classList.add('text-green-600');
-                renderTable();
-                clearForm();
+                (async () => {
+                    try {
+                        if (uuid) {
+                            await apiFetchJson(`/api/admin/products/${encodeURIComponent(uuid)}`, { method: 'PUT', body: JSON.stringify(payload) });
+                        } else {
+                            await apiFetchJson('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) });
+                        }
+                        statusEl.textContent = 'Produk tersimpan.';
+                        statusEl.classList.remove('hidden', 'text-red-500');
+                        statusEl.classList.add('text-green-600');
+                        await loadProducts();
+                        await renderTable();
+                        clearForm();
+                    } catch (error) {
+                        statusEl.textContent = error?.data?.message || error?.message || 'Gagal menyimpan produk.';
+                        statusEl.classList.remove('hidden', 'text-green-600');
+                        statusEl.classList.add('text-red-500');
+                    }
+                })();
             });
 
             resetBtn.addEventListener('click', clearForm);
             resetProducts.addEventListener('click', () => {
-                if (!confirm('Hapus semua produk kustom?')) return;
-                localStorage.removeItem(CustomProductStore.STORAGE_KEY);
-                renderTable();
-                clearForm();
+                alert('Data sudah tersimpan di database (bukan localStorage).');
             });
 
-            renderTable();
-            window.addEventListener('wc-reviews-updated', renderTable);
+            const refreshOrdersAdmin = async () => {
+                if (!ordersAdminTable || !ordersAdminTotal) return;
+                try {
+                    const orders = await loadOrdersAdmin();
+                    ordersAdminTotal.textContent = `${orders.length} pesanan`;
+                    if (!orders.length) {
+                        ordersAdminTable.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-gray-400">Belum ada pesanan masuk.</td></tr>';
+                        return;
+                    }
 
-            // Init default nested type.
-            if (form && form.category) {
-                const group = normalizeGroup(form.category.value, '');
-                form.category.value = group;
-                renderTypeOptions(group);
-            }
+                    const statusLabel = (status) => {
+                        if (status === 'packed') return 'Dikemas';
+                        if (status === 'delivered') return 'Diterima';
+                        if (status === 'shipped') return 'Dalam pengiriman';
+                        return String(status || '-');
+                    };
 
-            renderOrdersAdmin();
-            window.addEventListener('wc-orders-updated', renderOrdersAdmin);
-            window.addEventListener('storage', (event) => {
-                if (event.key === OrderStore.STORAGE_KEY) {
-                    renderOrdersAdmin();
+                    const readCustomer = (snapshotRaw) => {
+                        try {
+                            const snap = snapshotRaw ? JSON.parse(snapshotRaw) : null;
+                            return snap?.customer || null;
+                        } catch (_) {
+                            return null;
+                        }
+                    };
+
+                    ordersAdminTable.innerHTML = orders.map((order) => {
+                        const customer = readCustomer(order.customer_snapshot);
+                        const customerLabel = customer?.fullname || customer?.email || '-';
+                        const qty = Number(order.total_qty) || 1;
+                        const canShip = order.status === 'packed';
+                        const canDeliver = order.status === 'shipped';
+                        const shipBtn = canShip
+                            ? `<button data-action="ship" data-id="${escapeHTML(order.uuid)}" class="text-sm font-semibold text-white bg-secondary px-4 py-1.5 rounded-full hover:bg-secondary/90">Tandai Dikirim</button>`
+                            : '';
+                        const deliverBtn = canDeliver
+                            ? `<button data-action="deliver" data-id="${escapeHTML(order.uuid)}" class="text-sm font-semibold text-white bg-primary px-4 py-1.5 rounded-full hover:bg-primary/90">Tandai Diterima</button>`
+                            : '';
+                        const actions = (shipBtn || deliverBtn) ? `${shipBtn}${shipBtn && deliverBtn ? ' ' : ''}${deliverBtn}` : '<span class="text-xs text-gray-400">-</span>';
+                        return `
+                            <tr>
+                                <td class="py-2 pr-4 font-semibold text-dark">#${escapeHTML(order.public_id || order.uuid)}</td>
+                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(customerLabel)}</td>
+                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(order.product_title || 'Produk Wida Collection')}</td>
+                                <td class="py-2 pr-4 text-gray-500">${qty}</td>
+                                <td class="py-2 pr-4 text-primary font-semibold">${escapeHTML(formatCurrency(order.total))}</td>
+                                <td class="py-2 pr-4 text-gray-500">${escapeHTML(statusLabel(order.status))}</td>
+                                <td class="py-2 pr-4">${actions}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } catch (error) {
+                    ordersAdminTotal.textContent = '0 pesanan';
+                    ordersAdminTable.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-gray-400">Gagal memuat pesanan.</td></tr>';
                 }
-            });
+            };
 
-            if (liveDropForm) {
-                if (!hasLiveDropStore) {
-                    disableLiveDropForm();
-                } else {
-                    hydrateLiveDropForm();
-                    liveDropForm.addEventListener('submit', (event) => {
+            (async () => {
+                if (!window.AuthStore) {
+                    alert('Sistem auth belum siap. Muat ulang halaman.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                const me = await AuthStore.me();
+                if (!me) {
+                    const next = currentRelativeUrl();
+                    setLoginRedirect(next);
+                    window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                    return;
+                }
+                if (!AuthStore.isAdmin || !AuthStore.isAdmin()) {
+                    alert('Halaman ini khusus admin Wida Collection.');
+                    window.location.href = 'body.html';
+                    return;
+                }
+
+                try {
+                    await loadProducts();
+                    await renderTable();
+                } catch (error) {
+                    console.error('Gagal memuat produk admin', error);
+                }
+
+                renderOrdersAdmin();
+                await refreshOrdersAdmin();
+
+                // Init default nested type.
+                if (form && form.category) {
+                    const group = normalizeGroup(form.category.value, '');
+                    form.category.value = group;
+                    renderTypeOptions(group);
+                }
+
+                if (liveDropForm) {
+                    await hydrateLiveDropForm();
+                    liveDropForm.addEventListener('submit', async (event) => {
                         event.preventDefault();
                         try {
                             const payload = {
-                                heroTitle: liveDropForm.heroTitle.value.trim() || liveDropDefaults.heroTitle || '',
-                                heroDescription: liveDropForm.heroDescription.value.trim() || liveDropDefaults.heroDescription || '',
-                                eventTitle: liveDropForm.eventTitle.value.trim() || liveDropDefaults.eventTitle || '',
-                                eventSubtitle: liveDropForm.eventSubtitle.value.trim(),
-                                eventDateTime: liveDropForm.eventDateTime.value || liveDropDefaults.eventDateTime || '',
-                                ctaLabel: liveDropForm.ctaLabel.value.trim() || liveDropDefaults.ctaLabel || '',
+                                hero_title: liveDropForm.heroTitle.value.trim() || liveDropDefaults.heroTitle || '',
+                                hero_description: liveDropForm.heroDescription.value.trim() || liveDropDefaults.heroDescription || '',
+                                event_title: liveDropForm.eventTitle.value.trim() || liveDropDefaults.eventTitle || '',
+                                event_subtitle: liveDropForm.eventSubtitle.value.trim(),
+                                event_date_time: liveDropForm.eventDateTime.value ? new Date(liveDropForm.eventDateTime.value).toISOString() : null,
+                                cta_label: liveDropForm.ctaLabel.value.trim() || liveDropDefaults.ctaLabel || '',
                             };
-                            if (!payload.eventDateTime) {
+                            if (!payload.event_date_time) {
                                 setLiveDropStatus('Isi waktu live terlebih dahulu.', 'error');
                                 return;
                             }
-                            LiveDropStore.saveSettings(payload);
+                            await apiFetchJson('/api/admin/live-drop', { method: 'PUT', body: JSON.stringify(payload) });
                             setLiveDropStatus('Pengaturan live drop diperbarui.', 'success');
                         } catch (error) {
                             console.error('Gagal menyimpan live drop', error);
-                            setLiveDropStatus('Gagal menyimpan pengaturan live drop.', 'error');
+                            setLiveDropStatus(error?.data?.message || error?.message || 'Gagal menyimpan pengaturan live drop.', 'error');
                         }
                     });
+
                     if (liveDropReset) {
-                        liveDropReset.addEventListener('click', () => {
+                        liveDropReset.addEventListener('click', async () => {
                             if (!confirm('Kembalikan ke pengaturan bawaan?')) return;
-                            try {
-                                LiveDropStore.resetSettings();
-                                setLiveDropStatus('Pengaturan dikembalikan ke default.', 'success');
-                            } catch (error) {
-                                console.error('Gagal reset live drop', error);
-                                setLiveDropStatus('Gagal reset pengaturan live drop.', 'error');
-                            }
+                            liveDropForm.heroTitle.value = liveDropDefaults.heroTitle;
+                            liveDropForm.heroDescription.value = liveDropDefaults.heroDescription;
+                            liveDropForm.eventTitle.value = liveDropDefaults.eventTitle;
+                            liveDropForm.eventSubtitle.value = liveDropDefaults.eventSubtitle;
+                            liveDropForm.eventDateTime.value = '';
+                            liveDropForm.ctaLabel.value = liveDropDefaults.ctaLabel;
+                            setLiveDropStatus('Pengaturan direset. Klik Simpan Jadwal untuk menerapkan.', 'success');
                         });
                     }
-                    window.addEventListener('wc-live-drop-updated', () => {
-                        hydrateLiveDropForm();
-                    });
                 }
-            }
+            })();
         });
     </script>
 </body>

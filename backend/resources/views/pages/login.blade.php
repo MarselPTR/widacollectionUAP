@@ -78,49 +78,57 @@
         const statusEl = document.getElementById('loginStatus');
         const REDIRECT_KEY = 'wc_login_redirect';
         if (!form) return;
-        form.addEventListener('submit', (e) => {
+        const getNext = () => {
+            const url = new URL(window.location.href);
+            const qNext = url.searchParams.get('next');
+            if (qNext && qNext.trim()) return qNext.trim();
+            try {
+                return sessionStorage.getItem(REDIRECT_KEY) || '';
+            } catch (_) {
+                return '';
+            }
+        };
+        const clearNext = () => {
+            try {
+                sessionStorage.removeItem(REDIRECT_KEY);
+            } catch (_) {}
+        };
+        const redirectAfterLogin = async () => {
+            const next = getNext();
+            const safeNext = typeof next === 'string' && next.trim() && !next.trim().startsWith('login.html');
+            if (safeNext) {
+                clearNext();
+                window.location.href = next.trim();
+                return;
+            }
+            const me = await AuthStore.me();
+            window.location.href = me?.is_admin ? 'profile-admin.html' : 'profile.html';
+        };
+
+        (async () => {
+            if (!window.AuthStore) return;
+            const me = await AuthStore.me();
+            if (me) {
+                await redirectAfterLogin();
+            }
+        })();
+
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!window.AuthStore || !window.ProfileStore) {
+            if (!window.AuthStore) {
                 alert('Sistem auth belum siap. Muat ulang halaman.');
                 return;
             }
             const email = form.email.value.trim().toLowerCase();
             const password = form.password.value;
-            const account = AuthStore.verifyCredentials(email, password);
-            if (!account) {
-                statusEl.textContent = 'Email atau password tidak cocok.';
+            try {
+                statusEl.classList.add('hidden');
+                await AuthStore.login(email, password);
+                await redirectAfterLogin();
+            } catch (error) {
+                statusEl.textContent = error?.message || 'Email atau password tidak cocok.';
                 statusEl.classList.remove('hidden');
-                return;
             }
-            statusEl.classList.add('hidden');
-            AuthStore.setLoggedIn(true);
-            ProfileStore.saveProfileData({
-                name: account.name,
-                email: account.email,
-                phone: account.phone,
-            });
-
-            const next = (() => {
-                try {
-                    return localStorage.getItem(REDIRECT_KEY) || '';
-                } catch (_) {
-                    return '';
-                }
-            })();
-            const safeNext = typeof next === 'string' && next.trim() && !next.trim().startsWith('login.html');
-            if (safeNext) {
-                try {
-                    localStorage.removeItem(REDIRECT_KEY);
-                } catch (_) {}
-                window.location.href = next.trim();
-                return;
-            }
-
-            if (typeof AuthStore.isAdmin === 'function' && AuthStore.isAdmin()) {
-                window.location.href = 'profile-admin.html';
-                return;
-            }
-            window.location.href = 'profile.html';
         });
     });
     </script>

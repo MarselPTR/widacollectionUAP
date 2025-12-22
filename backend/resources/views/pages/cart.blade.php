@@ -141,7 +141,7 @@
 
     <template id="cart-line-template">
       <article class="bg-white rounded-2xl p-5 shadow border border-gray-100 flex flex-col sm:flex-row gap-5">
-        <div class="w-full sm:w-32 bg-gradient-to-br from-gray-50 to-white rounded-xl flex items-center justify-center overflow-hidden">
+        <div class="w-full sm:w-32 bg-linear-to-br from-gray-50 to-white rounded-xl flex items-center justify-center overflow-hidden">
           <img data-line-image src="" alt="" class="w-24 h-24 object-contain" loading="lazy" />
         </div>
         <div class="flex-1 flex flex-col gap-3">
@@ -177,23 +177,29 @@
 
     <script>
       document.addEventListener('DOMContentLoaded', () => {
-        const LOGIN_KEY = 'wc_logged_in';
-        const CART_KEY = 'wc_cart_items';
         const REDIRECT_KEY = 'wc_login_redirect';
         const setLoginRedirect = (value) => {
           try {
-            localStorage.setItem(REDIRECT_KEY, String(value || ''));
+            sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
           } catch (_) {}
         };
         const currentRelativeUrl = () => {
           const file = window.location.pathname.split('/').pop() || 'cart.html';
           return `${file}${window.location.search || ''}${window.location.hash || ''}`;
         };
-        if (localStorage.getItem(LOGIN_KEY) !== '1') {
-          setLoginRedirect(currentRelativeUrl());
-          window.location.href = 'login.html';
-          return;
-        }
+
+        (async () => {
+          if (!window.AuthStore) {
+            alert('Sistem auth belum siap. Muat ulang halaman.');
+            return;
+          }
+          const me = await AuthStore.me();
+          if (!me) {
+            const next = currentRelativeUrl();
+            setLoginRedirect(next);
+            window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+            return;
+          }
 
         const cartLinesEl = document.getElementById('cartLines');
         const cartEmptyEl = document.getElementById('cartEmpty');
@@ -206,95 +212,42 @@
         const clearCartBtn = document.getElementById('clearCart');
         const lineTemplate = document.getElementById('cart-line-template');
         const IMAGE_FALLBACK = 'https://placehold.co/320x320?text=Wida+Collection';
-        const SHIPPING_PREF_KEY = 'wc_shipping_pref';
 
         const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
 
-        const loadCart = () => {
-          try {
-            const raw = localStorage.getItem(CART_KEY) || '[]';
-            const parsed = JSON.parse(raw);
-            return Array.isArray(parsed) ? parsed : [];
-          } catch (error) {
-            console.warn('Cart data corrupted, resetting...', error);
-            return [];
+        const apiFetchJson = async (url, options = {}) => {
+          const res = await fetch(url, {
+            credentials: 'same-origin',
+            headers: {
+              Accept: 'application/json',
+              'Content-Type': 'application/json',
+              ...(options.headers || {}),
+            },
+            ...options,
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok) {
+            const err = new Error(data?.message || `Request failed (${res.status})`);
+            err.status = res.status;
+            err.data = data;
+            throw err;
           }
+          return data;
         };
 
-        const parseNumber = (value) => {
-          if (typeof value === 'number' && Number.isFinite(value)) return value;
-          if (typeof value === 'string') {
-            const sanitized = value.replace(/[^0-9,-]/g, '').replace(/,/g, '.');
-            const numeric = Number(sanitized.replace(/\.(?=.*\.)/g, ''));
-            if (Number.isFinite(numeric)) return numeric;
-          }
-          return 0;
-        };
-
-        const loadShippingPref = () => {
-          try {
-            const raw = localStorage.getItem(SHIPPING_PREF_KEY);
-            const parsed = raw ? JSON.parse(raw) : null;
-            return parsed && typeof parsed === 'object' ? parsed : null;
-          } catch (error) {
-            console.warn('Gagal membaca preferensi pengiriman', error);
-            return null;
-          }
-        };
-
-        const persistShippingPref = () => {
-          if (!shippingSpeed) return;
-          const selected = shippingSpeed.selectedOptions[0];
-          const payload = {
-            value: shippingSpeed.value,
-            label: selected?.dataset.label || selected?.textContent?.trim() || '',
-          };
-          localStorage.setItem(SHIPPING_PREF_KEY, JSON.stringify(payload));
-        };
-
-        const normalizeLine = (raw, idx) => {
-          if (!raw) return null;
-          const quantity = Number(raw.quantity ?? raw.qty ?? 1);
-          const price = parseNumber(raw.price ?? raw.priceRaw ?? raw.priceDisplay);
-          return {
-            id: String(raw.id ?? `wc-${idx}-${Date.now()}`),
-            name: raw.name ?? raw.title ?? 'Produk Wida Collection',
-            category: raw.category ?? raw.type ?? 'Kurasi Wida Collection',
-            description: raw.description ?? raw.note ?? '',
-            image: raw.image || IMAGE_FALLBACK,
-            price: price > 0 ? price : 0,
-            quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-          };
-        };
-
-        let cartLines = loadCart().map(normalizeLine).filter(Boolean);
-
-        const applySavedShipping = () => {
-          const pref = loadShippingPref();
-          if (pref?.value && shippingSpeed?.querySelector(`option[value="${pref.value}"]`)) {
-            shippingSpeed.value = String(pref.value);
-          }
-          persistShippingPref();
-        };
-
-        const persist = () => {
-          const legacyFriendly = cartLines.map((line) => ({
-            ...line,
-            qty: line.quantity,
-            priceRaw: line.price,
-          }));
-          localStorage.setItem(CART_KEY, JSON.stringify(legacyFriendly));
-        };
+        let cart = null;
+        let items = [];
+        let summary = { subtotal: 0, shipping: 0, total: 0 };
 
         const updateCountLabel = () => {
-          const totalItems = cartLines.reduce((acc, item) => acc + (item.quantity || 0), 0);
+          const totalItems = items.reduce((acc, item) => acc + (Number(item.quantity) || 0), 0);
           if (cartStatusLabel) {
             cartStatusLabel.textContent = totalItems > 0 ? `${totalItems} item tersimpan` : 'Tidak ada item';
           }
         };
 
         const updateEmptyState = () => {
-          if (cartLines.length === 0) {
+          if (!items.length) {
             cartLinesEl.innerHTML = '';
             cartEmptyEl.classList.remove('hidden');
           } else {
@@ -302,90 +255,113 @@
           }
         };
 
-        const recalcTotals = () => {
-          const subtotal = cartLines.reduce((acc, line) => acc + (line.price || 0) * (line.quantity || 0), 0);
-          const shippingCost = Number(shippingSpeed?.value || 0);
-          subtotalAmount.textContent = currency.format(subtotal);
-          shippingAmount.textContent = currency.format(shippingCost);
-          totalAmount.textContent = currency.format(subtotal + shippingCost);
-          const disabled = cartLines.length === 0;
+        const updateTotals = () => {
+          subtotalAmount.textContent = currency.format(Number(summary.subtotal) || 0);
+          shippingAmount.textContent = currency.format(Number(summary.shipping) || 0);
+          totalAmount.textContent = currency.format(Number(summary.total) || 0);
+          const disabled = items.length === 0;
           checkoutBtn.disabled = disabled;
           checkoutBtn.classList.toggle('opacity-60', disabled);
         };
 
-        const handleQuantityChange = (id, delta) => {
-          const target = cartLines.find((line) => line.id === id);
-          if (!target) return;
-          target.quantity = Math.max(1, (target.quantity || 1) + delta);
-          persist();
-          render();
-        };
-
-        const handleRemove = (id) => {
-          cartLines = cartLines.filter((line) => line.id !== id);
-          persist();
-          render();
-        };
-
         const buildLineElement = (line) => {
           const fragment = lineTemplate.content.cloneNode(true);
-          fragment.querySelector('[data-line-image]').src = line.image;
-          fragment.querySelector('[data-line-image]').alt = line.name;
-          fragment.querySelector('[data-line-category]').textContent = line.category;
-          fragment.querySelector('[data-line-name]').textContent = line.name;
+          const image = line.image || IMAGE_FALLBACK;
+          fragment.querySelector('[data-line-image]').src = image;
+          fragment.querySelector('[data-line-image]').alt = line.name || 'Produk';
+          fragment.querySelector('[data-line-category]').textContent = line.category || 'Kurasi Wida Collection';
+          fragment.querySelector('[data-line-name]').textContent = line.name || 'Produk Wida Collection';
           fragment.querySelector('[data-line-note]').textContent = line.description || 'Pilihan terbaik minggu ini';
-          fragment.querySelector('[data-line-price]').textContent = currency.format(line.price);
-          fragment.querySelector('[data-line-qty]').textContent = line.quantity;
-          fragment.querySelector('[data-line-remove]').dataset.id = line.id;
-          fragment.querySelector('[data-line-decrease]').dataset.id = line.id;
-          fragment.querySelector('[data-line-increase]').dataset.id = line.id;
+          fragment.querySelector('[data-line-price]').textContent = currency.format(Number(line.price) || 0);
+          fragment.querySelector('[data-line-qty]').textContent = Number(line.quantity) || 1;
+          fragment.querySelector('[data-line-remove]').dataset.uuid = line.uuid;
+          fragment.querySelector('[data-line-decrease]').dataset.uuid = line.uuid;
+          fragment.querySelector('[data-line-increase]').dataset.uuid = line.uuid;
           return fragment;
         };
 
         const bindLineEvents = () => {
           cartLinesEl.querySelectorAll('[data-line-remove]').forEach((btn) => {
-            btn.addEventListener('click', () => handleRemove(btn.dataset.id));
+            btn.addEventListener('click', async () => {
+              const uuid = btn.dataset.uuid;
+              if (!uuid) return;
+              await apiFetchJson(`/api/cart/items/${encodeURIComponent(uuid)}`, { method: 'DELETE' });
+              await loadAndRender();
+            });
           });
           cartLinesEl.querySelectorAll('[data-line-decrease]').forEach((btn) => {
-            btn.addEventListener('click', () => handleQuantityChange(btn.dataset.id, -1));
+            btn.addEventListener('click', async () => {
+              const uuid = btn.dataset.uuid;
+              const item = items.find((x) => x.uuid === uuid);
+              if (!uuid || !item) return;
+              const nextQty = Math.max(1, (Number(item.quantity) || 1) - 1);
+              await apiFetchJson(`/api/cart/items/${encodeURIComponent(uuid)}`, { method: 'PATCH', body: JSON.stringify({ quantity: nextQty }) });
+              await loadAndRender();
+            });
           });
           cartLinesEl.querySelectorAll('[data-line-increase]').forEach((btn) => {
-            btn.addEventListener('click', () => handleQuantityChange(btn.dataset.id, 1));
+            btn.addEventListener('click', async () => {
+              const uuid = btn.dataset.uuid;
+              const item = items.find((x) => x.uuid === uuid);
+              if (!uuid || !item) return;
+              const nextQty = (Number(item.quantity) || 1) + 1;
+              await apiFetchJson(`/api/cart/items/${encodeURIComponent(uuid)}`, { method: 'PATCH', body: JSON.stringify({ quantity: nextQty }) });
+              await loadAndRender();
+            });
           });
         };
 
         const render = () => {
           updateCountLabel();
           updateEmptyState();
-          if (!cartLines.length) {
-            recalcTotals();
-            return;
-          }
           cartLinesEl.innerHTML = '';
-          cartLines.forEach((line) => {
+          items.forEach((line) => {
             cartLinesEl.appendChild(buildLineElement(line));
           });
           bindLineEvents();
-          recalcTotals();
+          updateTotals();
         };
 
-        shippingSpeed.addEventListener('change', () => {
-          recalcTotals();
-          persistShippingPref();
-        });
-        checkoutBtn.addEventListener('click', () => {
-          if (cartLines.length === 0) return;
-          window.location.href = 'checkout.html';
-        });
-        clearCartBtn.addEventListener('click', () => {
-          if (!cartLines.length) return;
-          cartLines = [];
-          persist();
+        const applyShippingFromCart = () => {
+          if (!shippingSpeed || !cart) return;
+          const value = String(cart.shipping_value ?? '0');
+          if (shippingSpeed.querySelector(`option[value="${value}"]`)) {
+            shippingSpeed.value = value;
+          }
+        };
+
+        const loadAndRender = async () => {
+          const res = await apiFetchJson('/api/cart');
+          cart = res?.data?.cart || null;
+          items = Array.isArray(res?.data?.items) ? res.data.items : [];
+          summary = res?.data?.summary || { subtotal: 0, shipping: 0, total: 0 };
+          applyShippingFromCart();
           render();
+        };
+
+        shippingSpeed?.addEventListener('change', async () => {
+          const selected = shippingSpeed.selectedOptions?.[0];
+          const shipping_value = Number(shippingSpeed.value || 0);
+          const shipping_label = selected?.dataset?.label || selected?.textContent?.trim() || null;
+          await apiFetchJson('/api/cart/shipping', {
+            method: 'PATCH',
+            body: JSON.stringify({ shipping_value, shipping_label }),
+          });
+          await loadAndRender();
         });
 
-        applySavedShipping();
-        render();
+        checkoutBtn?.addEventListener('click', () => {
+          if (!items.length) return;
+          window.location.href = 'checkout.html';
+        });
+
+        clearCartBtn?.addEventListener('click', async () => {
+          await apiFetchJson('/api/cart/clear', { method: 'DELETE' });
+          await loadAndRender();
+        });
+
+        await loadAndRender();
+        })();
       });
     </script>
   </body>

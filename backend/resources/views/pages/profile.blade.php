@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="app.css">
 </head>
 <body class="font-poppins bg-gray-50">
-    <div class="relative bg-gradient-to-br from-primary via-secondary to-dark text-white">
+    <div class="relative bg-linear-to-br from-primary via-secondary to-dark text-white">
         <div class="max-w-6xl mx-auto px-4 py-12 pb-32 md:pb-40 space-y-6">
             <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -36,7 +36,7 @@
     <main class="relative z-10 max-w-6xl mx-auto px-4 -mt-20 md:-mt-32 pb-16 space-y-10">
         <section class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 flex flex-col lg:flex-row gap-8">
             <div class="flex flex-col items-center text-center gap-4 lg:w-1/3">
-                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden">
+                <div class="w-32 h-32 rounded-full bg-linear-to-br from-primary to-secondary flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden">
                     <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
                     <span id="profileAvatarInitial" data-wc-avatar-fallback>WB</span>
                 </div>
@@ -51,7 +51,7 @@
                 <a href="edit-profile.html" class="btn-main px-8 text-center">Edit Profil</a>
             </div>
             <div class="flex-1 grid sm:grid-cols-2 gap-6">
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-envelope text-primary"></i> Kontak
                     </div>
@@ -59,24 +59,24 @@
                     <p id="profilePhone" class="text-gray-500">+62 812-3456-7890</p>
                     <p id="profileCity" class="text-gray-500">Jakarta Selatan, Indonesia</p>
                 </div>
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-fire text-primary"></i> Progress
                     </div>
                     <p class="text-dark font-semibold">Tier berikutnya: Iconic</p>
                     <div class="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-                        <div class="h-3 bg-gradient-to-r from-primary to-secondary rounded-full" style="width: 72%"></div>
+                        <div class="h-3 bg-linear-to-r from-primary to-secondary rounded-full" style="width: 72%"></div>
                     </div>
                     <p class="text-sm text-gray-500">Belanja 3 kali lagi untuk membuka akses drop eksklusif.</p>
                 </div>
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-coins text-primary"></i> Points
                     </div>
                     <p class="text-3xl font-bold text-dark">1.450</p>
                     <p class="text-sm text-gray-500">Tukar 1.000 poin untuk free ongkir kapan saja.</p>
                 </div>
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-ticket text-primary"></i> Voucher aktif
                     </div>
@@ -136,76 +136,47 @@
     </main>
 
     <script src="js/reveal.js" defer></script>
-    <script src="js/order-store.js"></script>
-    <script src="js/review-store.js"></script>
     <script src="js/profile-data.js"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const REDIRECT_KEY = 'wc_login_redirect';
         const setLoginRedirect = (value) => {
             try {
-                localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
             } catch (_) {}
         };
         const currentRelativeUrl = () => {
             const file = window.location.pathname.split('/').pop() || 'profile.html';
             return `${file}${window.location.search || ''}${window.location.hash || ''}`;
         };
-        if (localStorage.getItem('wc_logged_in') !== '1') {
-            setLoginRedirect(currentRelativeUrl());
-            window.location.href = 'login.html';
-            return;
-        }
 
-        if (!window.ProfileStore || !window.AuthStore) {
-            alert('Data profil tidak tersedia. Muat ulang halaman.');
-            return;
-        }
+        const apiFetchJson = async (url, options = {}) => {
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                },
+                ...options,
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                const err = new Error(data?.message || `Request failed (${res.status})`);
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
+        };
 
-        if (typeof AuthStore.isAdmin === 'function' && AuthStore.isAdmin()) {
-            window.location.href = 'profile-admin.html';
-            return;
-        }
-
-        const logoutBtn = document.getElementById('logoutBtn');
-        logoutBtn?.addEventListener('click', () => {
-            AuthStore.logout();
-            window.location.href = 'body.html';
-        });
-
-        const profile = ProfileStore.getProfileData();
         const escapeHTML = (value = '') =>
             String(value ?? '')
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
-        const initials = profile.name
-            ? profile.name
-                  .split(' ')
-                  .map((part) => part.charAt(0))
-                  .join('')
-                  .slice(0, 2)
-                  .toUpperCase()
-            : 'WC';
-        const setText = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value || '-';
-        };
-        setText('profileAvatarInitial', initials);
-        setText('profileName', profile.name);
-        setText('profileBio', profile.bio || 'Tambahkan bio di halaman edit profil.');
-        setText('profileEmail', profile.email);
-        setText('profilePhone', profile.phone);
-        setText('profileCity', profile.city);
-        setText('profileTier', profile.tierLabel || 'Member Wida Collection');
-        setText('profileSince', profile.memberSince ? `Since ${profile.memberSince}` : 'Since 2021');
 
-        const addressContainer = document.getElementById('profileAddresses');
-        const wishlistContainer = document.getElementById('wishlistList');
-        const wishlistEmpty = document.getElementById('wishlistEmpty');
-        const recentOrdersContainer = document.getElementById('recentOrdersList');
-        const recentOrdersEmpty = document.getElementById('recentOrdersEmpty');
         const formatCurrency = (value = 0) => {
             try {
                 return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(value) || 0);
@@ -213,8 +184,21 @@
                 return `Rp ${(Number(value) || 0).toLocaleString('id-ID')}`;
             }
         };
-        const renderAddresses = () => {
-            const { addresses } = ProfileStore.getProfileData();
+
+        const setText = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = value || '-';
+        };
+
+        const addressContainer = document.getElementById('profileAddresses');
+        const wishlistContainer = document.getElementById('wishlistList');
+        const wishlistEmpty = document.getElementById('wishlistEmpty');
+        const recentOrdersContainer = document.getElementById('recentOrdersList');
+        const recentOrdersEmpty = document.getElementById('recentOrdersEmpty');
+
+        const renderAddresses = (profile) => {
+            if (!addressContainer) return;
+            const addresses = Array.isArray(profile?.addresses) ? profile.addresses : [];
             if (!addresses.length) {
                 addressContainer.innerHTML = '<p class="text-gray-400 text-sm">Belum ada alamat tersimpan.</p>';
                 return;
@@ -236,9 +220,14 @@
                 )
                 .join('');
         };
-        renderAddresses();
 
         const renderWishlist = () => {
+            if (!wishlistContainer || !wishlistEmpty) return;
+            if (!window.ProfileStore || typeof ProfileStore.getWishlist !== 'function') {
+                wishlistContainer.innerHTML = '';
+                wishlistEmpty.classList.remove('hidden');
+                return;
+            }
             const wishlist = ProfileStore.getWishlist();
             if (!wishlist.length) {
                 wishlistContainer.innerHTML = '';
@@ -266,57 +255,103 @@
                 )
                 .join('');
         };
-        renderWishlist();
 
-        const renderRecentOrders = () => {
-            if (!recentOrdersContainer) return;
-            if (!window.OrderStore || typeof OrderStore.getRecent !== 'function') {
-                recentOrdersContainer.innerHTML = '<p class="text-sm text-gray-400">Riwayat pesanan belum tersedia.</p>';
-                recentOrdersEmpty?.classList.add('hidden');
-                return;
-            }
-            const orders = OrderStore.getRecent(profile.email, 2);
-            if (!orders.length) {
-                recentOrdersContainer.innerHTML = '';
-                recentOrdersEmpty?.classList.remove('hidden');
-                return;
-            }
-            recentOrdersEmpty?.classList.add('hidden');
-            recentOrdersContainer.innerHTML = orders
-                .map((order) => {
-                    const statusClass = order.status === 'delivered' ? 'text-green-500' : order.status === 'shipped' ? 'text-secondary' : 'text-gray-500';
-                    const statusIcon = order.status === 'delivered' ? 'fa-box-open text-secondary' : 'fa-box text-primary';
-                    const reviewLabel = order.reviewId
-                        ? '<span class="text-xs text-primary font-semibold">Sudah diulas</span>'
-                        : '<span class="text-xs text-gray-400">Belum diulas</span>';
-                    const image = order.productImage || order.items?.[0]?.image || '';
-                    return `
-                        <div class="p-4 rounded-2xl border border-gray-100 flex gap-4 items-center">
-                            <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                                ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(order.productTitle || 'Produk')}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : `<i class="fas ${statusIcon} text-xl"></i>`}
-                            </div>
-                            <div class="flex-1">
-                                <p class="font-semibold text-dark">#${escapeHTML(order.id)}</p>
-                                <p class="text-sm text-gray-500">${escapeHTML(order.productTitle)}</p>
-                                <div class="text-xs ${statusClass} font-semibold">${escapeHTML(order.statusNote || '')}</div>
-                                ${reviewLabel}
-                            </div>
-                            <span class="text-primary font-bold">${formatCurrency(order.price)}</span>
-                        </div>
-                    `;
-                })
-                .join('');
-        };
-        renderRecentOrders();
+        const renderRecentOrders = async () => {
+            if (!recentOrdersContainer || !recentOrdersEmpty) return;
 
-        window.addEventListener('wc-reviews-updated', renderRecentOrders);
-        if (window.OrderStore) {
-            window.addEventListener('storage', (event) => {
-                if (event.key === OrderStore.STORAGE_KEY) {
-                    renderRecentOrders();
+            try {
+                const res = await apiFetchJson('/api/orders');
+                const orders = Array.isArray(res?.data) ? res.data : [];
+                const recent = orders.slice(0, 2);
+
+                if (!recent.length) {
+                    recentOrdersContainer.innerHTML = '';
+                    recentOrdersEmpty.classList.remove('hidden');
+                    return;
                 }
+
+                recentOrdersEmpty.classList.add('hidden');
+                recentOrdersContainer.innerHTML = recent
+                    .map((order) => {
+                        const status = String(order?.status || '');
+                        const statusNote = String(order?.status_note || '');
+                        const statusClass = status === 'delivered' ? 'text-green-500' : status === 'shipped' ? 'text-secondary' : 'text-gray-500';
+                        const statusIcon = status === 'delivered' ? 'fa-box-open text-secondary' : 'fa-box text-primary';
+                        const image = String(order?.product_image || '');
+                        const productTitle = String(order?.product_title || 'Produk');
+                        const orderId = String(order?.public_id || order?.uuid || '');
+                        const total = Number(order?.total) || 0;
+
+                        return `
+                            <div class="p-4 rounded-2xl border border-gray-100 flex gap-4 items-center">
+                                <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                                    ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(productTitle)}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : `<i class="fas ${statusIcon} text-xl"></i>`}
+                                </div>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-dark">#${escapeHTML(orderId)}</p>
+                                    <p class="text-sm text-gray-500">${escapeHTML(productTitle)}</p>
+                                    <div class="text-xs ${statusClass} font-semibold">${escapeHTML(statusNote)}</div>
+                                </div>
+                                <span class="text-primary font-bold">${formatCurrency(total)}</span>
+                            </div>
+                        `;
+                    })
+                    .join('');
+            } catch (err) {
+                recentOrdersContainer.innerHTML = '<p class="text-sm text-gray-400">Riwayat pesanan belum tersedia.</p>';
+                recentOrdersEmpty.classList.add('hidden');
+            }
+        };
+
+        (async () => {
+            if (!window.ProfileStore || !window.AuthStore) {
+                alert('Data profil tidak tersedia. Muat ulang halaman.');
+                return;
+            }
+            const me = await AuthStore.me();
+            if (!me) {
+                const next = currentRelativeUrl();
+                setLoginRedirect(next);
+                window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                return;
+            }
+
+            await ProfileStore.ready;
+
+            if (typeof AuthStore.isAdmin === 'function' && AuthStore.isAdmin()) {
+                window.location.href = 'profile-admin.html';
+                return;
+            }
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn?.addEventListener('click', async () => {
+                await AuthStore.logout();
+                window.location.href = 'body.html';
             });
-        }
+
+            const profile = ProfileStore.getProfileData();
+            const initials = profile?.name
+                ? String(profile.name)
+                      .split(' ')
+                      .map((part) => part.charAt(0))
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                : 'WC';
+
+            setText('profileAvatarInitial', initials);
+            setText('profileName', profile?.name);
+            setText('profileBio', profile?.bio || 'Tambahkan bio di halaman edit profil.');
+            setText('profileEmail', profile?.email);
+            setText('profilePhone', profile?.phone);
+            setText('profileCity', profile?.city);
+            setText('profileTier', profile?.tierLabel || 'Member Wida Collection');
+            setText('profileSince', profile?.memberSince ? `Since ${profile.memberSince}` : 'Since 2021');
+
+            renderAddresses(profile);
+            renderWishlist();
+            await renderRecentOrders();
+        })();
     });
     </script>
 </body>

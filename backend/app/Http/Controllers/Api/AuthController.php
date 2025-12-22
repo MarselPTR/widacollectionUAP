@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
+    private const TOKEN_COOKIE = 'wc_token';
+
     public function register(Request $request, JwtService $jwt)
     {
         $data = $request->validate([
@@ -28,7 +30,13 @@ class AuthController extends Controller
             'is_admin' => $this->isAdminEmail($email),
         ]);
 
-        return response()->json($jwt->issue($user), 201);
+        $issued = $jwt->issue($user);
+        $token = (string) ($issued['token'] ?? '');
+        $ttlMinutes = (int) config('jwt.ttl_minutes', 120);
+
+        return response()
+            ->json($issued, 201)
+            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, true, false, 'Lax');
     }
 
     public function login(Request $request, JwtService $jwt)
@@ -45,7 +53,13 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email atau password salah.'], 401);
         }
 
-        return response()->json($jwt->issue($user));
+        $issued = $jwt->issue($user);
+        $token = (string) ($issued['token'] ?? '');
+        $ttlMinutes = (int) config('jwt.ttl_minutes', 120);
+
+        return response()
+            ->json($issued)
+            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, true, false, 'Lax');
     }
 
     public function me(Request $request)
@@ -63,19 +77,94 @@ class AuthController extends Controller
 
     public function logout(Request $request, JwtService $jwt)
     {
+        $token = (string) $request->cookie(self::TOKEN_COOKIE, '');
         $header = (string) $request->header('Authorization', '');
-        if (preg_match('/^Bearer\s+(?<token>.+)$/i', $header, $m)) {
+        if ($token === '' && preg_match('/^Bearer\s+(?<token>.+)$/i', $header, $m)) {
             $token = trim((string) ($m['token'] ?? ''));
-            if ($token !== '') {
-                try {
-                    $jwt->revoke($token);
-                } catch (\Throwable $e) {
-                    // ignore
-                }
+        }
+
+        if (trim($token) !== '') {
+            try {
+                $jwt->revoke($token);
+            } catch (\Throwable $e) {
+                // ignore
             }
         }
 
-        return response()->json(['message' => 'Logged out.']);
+        return response()
+            ->json(['message' => 'Logged out.'])
+            ->withoutCookie(self::TOKEN_COOKIE);
+    }
+
+    public function updateCredentials(Request $request, JwtService $jwt)
+    {
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $data = $request->validate([
+            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'old_password' => ['sometimes', 'nullable', 'string'],
+            'new_password' => ['sometimes', 'nullable', 'string', 'min:6'],
+        ]);
+
+        $email = array_key_exists('email', $data) && $data['email'] !== null
+            ? Str::lower(trim((string) $data['email']))
+            : null;
+
+        if ($email !== null) {
+            $exists = User::query()
+                ->where('email', $email)
+                ->where('id', '!=', $user->id)
+                ->exists();
+            if ($exists) {
+                return response()->json(['message' => 'Email sudah digunakan.'], 422);
+            }
+        }
+
+        $changingPassword = array_key_exists('new_password', $data) && $data['new_password'] !== null && trim((string) $data['new_password']) !== '';
+        if ($changingPassword) {
+            $old = (string) ($data['old_password'] ?? '');
+            if ($old === '' || !Hash::check($old, (string) $user->password)) {
+                return response()->json(['message' => 'Password lama tidak cocok.'], 422);
+            }
+        }
+
+        if (array_key_exists('name', $data) && $data['name'] !== null) {
+            $user->name = (string) $data['name'];
+        }
+        if ($email !== null) {
+            $user->email = $email;
+            $user->is_admin = $this->isAdminEmail($email);
+        }
+        if ($changingPassword) {
+            $user->password = (string) $data['new_password'];
+        }
+        $user->save();
+
+        // Re-issue token to reflect email/is_admin changes.
+        $currentToken = (string) $request->cookie(self::TOKEN_COOKIE, '');
+        $header = (string) $request->header('Authorization', '');
+        if ($currentToken === '' && preg_match('/^Bearer\s+(?<token>.+)$/i', $header, $m)) {
+            $currentToken = trim((string) ($m['token'] ?? ''));
+        }
+        if ($currentToken !== '') {
+            try {
+                $jwt->revoke($currentToken);
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        $issued = $jwt->issue($user);
+        $token = (string) ($issued['access_token'] ?? '');
+        $ttlMinutes = (int) config('jwt.ttl_minutes', 120);
+
+        return response()
+            ->json($issued)
+            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, true, false, 'Lax');
     }
 
     private function isAdminEmail(string $email): bool

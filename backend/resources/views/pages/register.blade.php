@@ -80,7 +80,7 @@
         const form = document.getElementById('registerForm');
         const statusEl = document.getElementById('registerStatus');
         if (!form) return;
-        form.addEventListener('submit', (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!window.AuthStore || !window.ProfileStore) {
                 alert('Sistem auth belum siap. Muat ulang halaman.');
@@ -102,8 +102,9 @@
                 return;
             }
             try {
-                AuthStore.registerAccount({ name, email, phone, password });
-                AuthStore.setLoggedIn(true);
+                await AuthStore.registerAccount({ name, email, password });
+                // phone is stored in profile table.
+                await ProfileStore.saveProfileData({ name, phone });
                 statusEl.classList.add('hidden');
                 window.location.href = 'profile.html';
             } catch (error) {

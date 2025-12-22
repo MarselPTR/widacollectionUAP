@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="app.css">
 </head>
 <body class="font-poppins bg-gray-50">
-    <div class="relative bg-gradient-to-br from-dark via-secondary to-primary text-white">
+    <div class="relative bg-linear-to-br from-dark via-secondary to-primary text-white">
         <div class="max-w-6xl mx-auto px-4 py-12 pb-32 md:pb-40 space-y-6">
             <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -36,7 +36,7 @@
     <main class="relative z-10 max-w-6xl mx-auto px-4 -mt-20 md:-mt-32 pb-16 space-y-10">
         <section class="bg-white rounded-3xl shadow-xl border border-gray-100 p-6 md:p-8 flex flex-col lg:flex-row gap-8">
             <div class="flex flex-col items-center text-center gap-4 lg:w-1/3">
-                <div class="w-32 h-32 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden">
+                <div class="w-32 h-32 rounded-full bg-linear-to-br from-primary to-secondary flex items-center justify-center text-4xl font-bold text-white shadow-lg overflow-hidden">
                     <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
                     <span id="profileAvatarInitial" data-wc-avatar-fallback>WC</span>
                 </div>
@@ -50,14 +50,14 @@
                 <a href="edit-profile.html" class="btn-main px-8 text-center">Edit Profil</a>
             </div>
             <div class="flex-1 grid sm:grid-cols-2 gap-6">
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-envelope text-primary"></i> Kontak
                     </div>
                     <p id="profileEmail" class="text-dark font-semibold">-</p>
                     <p id="profilePhone" class="text-gray-500">-</p>
                 </div>
-                <div class="bg-gradient-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
+                <div class="bg-linear-to-br from-light to-white rounded-2xl border border-white shadow p-5 space-y-3">
                     <div class="flex items-center gap-3 text-gray-400 text-sm uppercase tracking-[0.3em]">
                         <i class="fas fa-circle-check text-primary"></i> Akses
                     </div>
@@ -87,60 +87,84 @@
         const REDIRECT_KEY = 'wc_login_redirect';
         const setLoginRedirect = (value) => {
             try {
-                localStorage.setItem(REDIRECT_KEY, String(value || ''));
+                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
             } catch (_) {}
         };
         const currentRelativeUrl = () => {
             const file = window.location.pathname.split('/').pop() || 'profile-admin.html';
             return `${file}${window.location.search || ''}${window.location.hash || ''}`;
         };
-        if (!window.AuthStore || typeof AuthStore.isLoggedIn !== 'function') {
-            setLoginRedirect(currentRelativeUrl());
-            window.location.href = 'login.html';
-            return;
-        }
-        if (!AuthStore.isLoggedIn()) {
-            setLoginRedirect(currentRelativeUrl());
-            window.location.href = 'login.html';
-            return;
-        }
-        if (typeof AuthStore.isAdmin !== 'function' || !AuthStore.isAdmin()) {
-            alert('Halaman ini khusus admin Wida Collection.');
-            window.location.href = 'profile.html';
-            return;
-        }
-
-        const logoutBtn = document.getElementById('logoutBtn');
-        logoutBtn?.addEventListener('click', () => {
-            AuthStore.logout();
-            window.location.href = 'body.html';
-        });
-
-        const profile = window.ProfileStore?.getProfileData?.() || {};
-        const initials = profile.name
-            ? profile.name
-                  .split(' ')
-                  .map((part) => part.charAt(0))
-                  .join('')
-                  .slice(0, 2)
-                  .toUpperCase()
-            : 'WC';
-
-        const setText = (id, value) => {
-            const el = document.getElementById(id);
-            if (el) el.textContent = value || '-';
+        const apiFetchJson = async (url, options = {}) => {
+            const res = await fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {}),
+                },
+                ...options,
+            });
+            const data = await res.json().catch(() => null);
+            if (!res.ok) {
+                const err = new Error(data?.message || `Request failed (${res.status})`);
+                err.status = res.status;
+                err.data = data;
+                throw err;
+            }
+            return data;
         };
 
-        setText('profileAvatarInitial', initials);
-        setText('profileName', profile.name || 'Admin');
-        setText('profileEmail', profile.email);
-        setText('profilePhone', profile.phone);
+        (async () => {
+            if (!window.AuthStore || typeof AuthStore.me !== 'function') {
+                setLoginRedirect(currentRelativeUrl());
+                window.location.href = 'login.html';
+                return;
+            }
 
-        // Contact messages inbox (admin-only)
-        const CONTACT_MESSAGES_KEY = 'wc_contact_messages_v1';
-        const adminMessagesList = document.getElementById('adminMessagesList');
-        const adminMessagesEmpty = document.getElementById('adminMessagesEmpty');
-        const adminMessagesTotal = document.getElementById('adminMessagesTotal');
+            const me = await AuthStore.me();
+            if (!me) {
+                setLoginRedirect(currentRelativeUrl());
+                window.location.href = 'login.html';
+                return;
+            }
+            if (typeof AuthStore.isAdmin !== 'function' || !AuthStore.isAdmin()) {
+                alert('Halaman ini khusus admin Wida Collection.');
+                window.location.href = 'profile.html';
+                return;
+            }
+
+            await window.ProfileStore?.ready?.catch?.(() => {});
+
+            const logoutBtn = document.getElementById('logoutBtn');
+            logoutBtn?.addEventListener('click', async () => {
+                await AuthStore.logout();
+                window.location.href = 'body.html';
+            });
+
+            const profile = window.ProfileStore?.getProfileData?.() || {};
+            const initials = profile.name
+                ? profile.name
+                      .split(' ')
+                      .map((part) => part.charAt(0))
+                      .join('')
+                      .slice(0, 2)
+                      .toUpperCase()
+                : 'WC';
+
+            const setText = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = value || '-';
+            };
+
+            setText('profileAvatarInitial', initials);
+            setText('profileName', profile.name || 'Admin');
+            setText('profileEmail', profile.email);
+            setText('profilePhone', profile.phone);
+
+            // Contact messages inbox (admin-only, DB-backed)
+            const adminMessagesList = document.getElementById('adminMessagesList');
+            const adminMessagesEmpty = document.getElementById('adminMessagesEmpty');
+            const adminMessagesTotal = document.getElementById('adminMessagesTotal');
 
         const escapeHTML = (value = '') =>
             String(value ?? '')
@@ -149,21 +173,10 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;');
 
-        const readMessages = () => {
-            try {
-                const raw = localStorage.getItem(CONTACT_MESSAGES_KEY);
-                const parsed = raw ? JSON.parse(raw) : [];
-                return Array.isArray(parsed) ? parsed : [];
-            } catch (_) {
-                return [];
-            }
-        };
-
-        const writeMessages = (list) => {
-            try {
-                localStorage.setItem(CONTACT_MESSAGES_KEY, JSON.stringify(list));
-            } catch (_) {}
-        };
+            const loadMessages = async () => {
+                const res = await apiFetchJson('/api/admin/contact-messages');
+                return Array.isArray(res?.data) ? res.data : [];
+            };
 
         const formatDate = (value) => {
             try {
@@ -173,54 +186,77 @@
             }
         };
 
-        const renderMessages = () => {
-            if (!adminMessagesList || !adminMessagesTotal) return;
-            const messages = readMessages();
-            adminMessagesTotal.textContent = `${messages.length} pesan`;
-            if (!messages.length) {
+            const renderMessages = async () => {
+                if (!adminMessagesList || !adminMessagesTotal) return;
+                adminMessagesTotal.textContent = '...';
+                adminMessagesEmpty?.classList.add('hidden');
                 adminMessagesList.innerHTML = '';
-                adminMessagesEmpty?.classList.remove('hidden');
-                return;
-            }
-            adminMessagesEmpty?.classList.add('hidden');
-            adminMessagesList.innerHTML = messages
-                .map((msg) => {
-                    const sender = msg.userEmail ? `${msg.name} (${msg.userEmail})` : msg.email ? `${msg.name} (${msg.email})` : msg.name;
-                    return `
-                        <article class="rounded-3xl border border-gray-100 bg-gradient-to-br from-light to-white p-5">
-                            <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div class="min-w-0">
-                                    <p class="text-xs uppercase tracking-[0.35em] text-gray-400">${escapeHTML(formatDate(msg.createdAt))}</p>
-                                    <h3 class="text-lg font-semibold text-dark mt-1">${escapeHTML(msg.subject || 'Pesan')}</h3>
-                                    <p class="text-sm text-gray-500 mt-1">Dari: <span class="font-semibold text-dark">${escapeHTML(sender || 'Pengunjung')}</span></p>
-                                </div>
-                                <button type="button" data-delete-message-id="${escapeHTML(msg.id)}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-200 text-red-500 font-semibold hover:bg-red-50 transition">
-                                    <i class="fas fa-trash"></i> Hapus
-                                </button>
-                            </div>
-                            <p class="text-gray-600 mt-4 whitespace-pre-line">${escapeHTML(msg.message || '')}</p>
-                        </article>
+
+                let messages = [];
+                try {
+                    messages = await loadMessages();
+                } catch (err) {
+                    adminMessagesTotal.textContent = '0 pesan';
+                    adminMessagesList.innerHTML = `
+                        <div class="rounded-2xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+                            Gagal memuat pesan admin. ${escapeHTML(err?.message || '')}
+                        </div>
                     `;
-                })
-                .join('');
-        };
+                    return;
+                }
 
-        adminMessagesList?.addEventListener('click', (event) => {
-            const btn = event.target.closest('[data-delete-message-id]');
-            if (!btn) return;
-            const id = btn.getAttribute('data-delete-message-id');
-            if (!id) return;
-            if (!confirm('Hapus pesan ini?')) return;
-            const next = readMessages().filter((msg) => String(msg.id) !== String(id));
-            writeMessages(next);
-            renderMessages();
-        });
+                adminMessagesTotal.textContent = `${messages.length} pesan`;
+                if (!messages.length) {
+                    adminMessagesEmpty?.classList.remove('hidden');
+                    return;
+                }
 
-        renderMessages();
-        window.addEventListener('storage', (event) => {
-            if (event.key === CONTACT_MESSAGES_KEY) renderMessages();
-        });
-        window.addEventListener('wc-contact-messages-updated', renderMessages);
+                adminMessagesList.innerHTML = messages
+                    .map((msg) => {
+                        const sender = msg.user_email
+                            ? `${msg.name} (${msg.user_email})`
+                            : msg.email
+                                ? `${msg.name} (${msg.email})`
+                                : msg.name;
+                        return `
+                            <article class="rounded-3xl border border-gray-100 bg-gradient-to-br from-light to-white p-5">
+                                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                                    <div class="min-w-0">
+                                        <p class="text-xs uppercase tracking-[0.35em] text-gray-400">${escapeHTML(formatDate(msg.submitted_at || msg.created_at))}</p>
+                                        <h3 class="text-lg font-semibold text-dark mt-1">${escapeHTML(msg.subject || 'Pesan')}</h3>
+                                        <p class="text-sm text-gray-500 mt-1">Dari: <span class="font-semibold text-dark">${escapeHTML(sender || 'Pengunjung')}</span></p>
+                                    </div>
+                                    <button type="button" data-delete-message-uuid="${escapeHTML(msg.uuid)}" class="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-200 text-red-500 font-semibold hover:bg-red-50 transition">
+                                        <i class="fas fa-trash"></i> Hapus
+                                    </button>
+                                </div>
+                                <p class="text-gray-600 mt-4 whitespace-pre-line">${escapeHTML(msg.message || '')}</p>
+                            </article>
+                        `;
+                    })
+                    .join('');
+            };
+
+            adminMessagesList?.addEventListener('click', async (event) => {
+                const btn = event.target.closest('[data-delete-message-uuid]');
+                if (!btn) return;
+                const uuid = btn.getAttribute('data-delete-message-uuid');
+                if (!uuid) return;
+                if (!confirm('Hapus pesan ini?')) return;
+                try {
+                    await fetch(`/api/admin/contact-messages/${encodeURIComponent(uuid)}`, {
+                        method: 'DELETE',
+                        credentials: 'same-origin',
+                        headers: { Accept: 'application/json' },
+                    });
+                } catch (_) {
+                    // ignore
+                }
+                await renderMessages();
+            });
+
+            await renderMessages();
+        })();
     });
     </script>
 </body>

@@ -7,8 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+use Carbon\Carbon;
+
 class LiveDropController extends Controller
 {
+    // ... (keep existing show method) ...
+
     public function show()
     {
         $row = DB::table('live_drop_settings')->orderByDesc('id')->first();
@@ -46,6 +50,11 @@ class LiveDropController extends Controller
         if (!$row) {
             $this->show();
             $row = DB::table('live_drop_settings')->orderByDesc('id')->first();
+        }
+
+        // Fix MySQL DateTime format
+        if (!empty($data['event_date_time'])) {
+            $data['event_date_time'] = Carbon::parse($data['event_date_time'])->format('Y-m-d H:i:s');
         }
 
         DB::table('live_drop_settings')->where('id', $row->id)->update(array_merge($data, [

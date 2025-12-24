@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -9,16 +10,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="app.css" />
 </head>
+
 <body class="bg-gray-50 font-poppins">
     <header class="bg-white border-b border-gray-100">
         <div class="container mx-auto px-4 py-4 flex items-center justify-between">
             <div>
-                <a href="body.html" class="text-2xl font-bold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida<span class="text-secondary">Collection</span></a>
+                <a href="body" class="text-2xl font-bold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida<span
+                        class="text-secondary">Collection</span></a>
                 <p class="text-sm text-gray-500 wc-reveal" style="--reveal-delay: 120ms;">Kelola wishlist favoritmu.</p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="profile.html" class="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:text-primary wc-reveal" style="--reveal-delay: 180ms;">Kembali ke Profil</a>
-                <a href="body.html#products" class="px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold shadow-lg hover:bg-red-600 wc-reveal" style="--reveal-delay: 240ms;">Tambah dari Katalog</a>
+                <a href="profile"
+                    class="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:text-primary wc-reveal"
+                    style="--reveal-delay: 180ms;">Kembali ke Profil</a>
+                <a href="body#products"
+                    class="px-4 py-2 rounded-full bg-primary text-white text-sm font-semibold shadow-lg hover:bg-red-600 wc-reveal"
+                    style="--reveal-delay: 240ms;">Tambah dari Katalog</a>
             </div>
         </div>
     </header>
@@ -32,20 +39,24 @@
                             <h1 class="text-2xl font-semibold text-dark">Wishlist Kamu</h1>
                             <p class="text-sm text-gray-500">Sinkron otomatis dengan profilmu.</p>
                         </div>
-                        <button id="wishlistClear" class="text-sm font-semibold text-red-500 hover:text-red-600">Bersihkan Semua</button>
+                        <button id="wishlistClear"
+                            class="text-sm font-semibold text-red-500 hover:text-red-600">Bersihkan Semua</button>
                     </div>
                     <div class="grid grid-cols-2 gap-4 mb-6">
-                        <div class="rounded-2xl bg-linear-to-br from-primary/10 to-white border border-primary/20 p-4">
+                        <div
+                            class="rounded-2xl bg-gradient-to-br from-primary/10 to-white border border-primary/20 p-4">
                             <p class="text-sm text-gray-500">Total Item</p>
                             <p id="wishlistCount" class="text-3xl font-bold text-primary">0</p>
                         </div>
-                        <div class="rounded-2xl bg-linear-to-br from-secondary/10 to-white border border-secondary/20 p-4">
+                        <div
+                            class="rounded-2xl bg-gradient-to-br from-secondary/10 to-white border border-secondary/20 p-4">
                             <p class="text-sm text-gray-500">Prioritas Tinggi</p>
                             <p id="wishlistPriority" class="text-3xl font-bold text-secondary">0</p>
                         </div>
                     </div>
                     <div id="wishlistItems" class="space-y-4"></div>
-                    <p id="wishlistEmpty" class="text-sm text-gray-400 text-center hidden">Belum ada wishlist tersimpan.</p>
+                    <p id="wishlistEmpty" class="text-sm text-gray-400 text-center hidden">Belum ada wishlist tersimpan.
+                    </p>
                 </article>
             </section>
 
@@ -70,10 +81,10 @@
             const setLoginRedirect = (value) => {
                 try {
                     sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
-                } catch (_) {}
+                } catch (_) { }
             };
             const currentRelativeUrl = () => {
-                const file = window.location.pathname.split('/').pop() || 'wishlist.html';
+                const file = window.location.pathname.split('/').pop() || 'wishlist';
                 return `${file}${window.location.search || ''}${window.location.hash || ''}`;
             };
             (async () => {
@@ -85,42 +96,42 @@
                 if (!me) {
                     const next = currentRelativeUrl();
                     setLoginRedirect(next);
-                    window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                    window.location.href = `login?next=${encodeURIComponent(next)}`;
                     return;
                 }
                 await ProfileStore.ready;
 
-            const listEl = document.getElementById('wishlistItems');
-            const emptyEl = document.getElementById('wishlistEmpty');
-            const countEl = document.getElementById('wishlistCount');
-            const priorityEl = document.getElementById('wishlistPriority');
-            const clearBtn = document.getElementById('wishlistClear');
+                const listEl = document.getElementById('wishlistItems');
+                const emptyEl = document.getElementById('wishlistEmpty');
+                const countEl = document.getElementById('wishlistCount');
+                const priorityEl = document.getElementById('wishlistPriority');
+                const clearBtn = document.getElementById('wishlistClear');
 
-            const escapeHTML = (value = '') => String(value ?? '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-            const formatCurrency = (value = 0) => {
-                try {
-                    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(value) || 0);
-                } catch (_) {
-                    return `Rp ${(Number(value) || 0).toLocaleString('id-ID')}`;
-                }
-            };
+                const escapeHTML = (value = '') => String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+                const formatCurrency = (value = 0) => {
+                    try {
+                        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(value) || 0);
+                    } catch (_) {
+                        return `Rp ${(Number(value) || 0).toLocaleString('id-ID')}`;
+                    }
+                };
 
-            const renderWishlist = () => {
-                const wishlist = ProfileStore.getWishlist();
-                countEl.textContent = wishlist.length;
-                priorityEl.textContent = wishlist.filter((item) => item.priority === 'high').length;
-                if (!wishlist.length) {
-                    listEl.innerHTML = '';
-                    emptyEl.classList.remove('hidden');
-                    return;
-                }
-                emptyEl.classList.add('hidden');
-                listEl.innerHTML = wishlist
-                    .map((item) => `
+                const renderWishlist = () => {
+                    const wishlist = ProfileStore.getWishlist();
+                    countEl.textContent = wishlist.length;
+                    priorityEl.textContent = wishlist.filter((item) => item.priority === 'high').length;
+                    if (!wishlist.length) {
+                        listEl.innerHTML = '';
+                        emptyEl.classList.remove('hidden');
+                        return;
+                    }
+                    emptyEl.classList.add('hidden');
+                    listEl.innerHTML = wishlist
+                        .map((item) => `
                         <article class="p-4 border border-gray-100 rounded-2xl flex items-center gap-4 bg-white">
                             <div class="w-16 h-16 rounded-xl bg-gradient-to-br from-gray-50 to-white flex items-center justify-center overflow-hidden">
                                 ${item.image ? `<img src="${escapeHTML(item.image)}" alt="${escapeHTML(item.title)}" class="w-12 h-12 object-contain" loading="lazy" />` : '<span class="text-xs text-gray-400">No Image</span>'}
@@ -134,31 +145,79 @@
                                     <span class="px-2 py-1 rounded-full bg-gray-100 text-gray-600">${escapeHTML(item.status || 'waiting')}</span>
                                 </div>
                             </div>
-                            <div class="text-right">
-                                <span class="text-primary font-bold block mb-2">${formatCurrency(item.price)}</span>
+                            <div class="text-right flex flex-col gap-2">
+                                <span class="text-primary font-bold">${formatCurrency(item.price)}</span>
+                                <button data-action="add-to-cart" data-ref-id="${escapeHTML(item.refId || '')}" data-title="${escapeHTML(item.title)}" data-price="${item.price}" data-wishlist-id="${item.id}"
+                                    class="text-xs px-3 py-1 rounded-full bg-primary text-white font-semibold hover:bg-red-600 transition">
+                                    <i class="fas fa-cart-plus mr-1"></i>Keranjang
+                                </button>
                                 <button data-action="remove" data-id="${item.id}" class="text-xs text-red-500 font-semibold hover:text-red-600">Hapus</button>
                             </div>
                         </article>
                     `)
-                    .join('');
-            };
+                        .join('');
+                };
 
-            listEl.addEventListener('click', (event) => {
-                const btn = event.target.closest('button[data-action="remove"]');
-                if (!btn) return;
-                ProfileStore.removeWishlistItem(btn.dataset.id);
+                // Add to cart from wishlist
+                const addToCartFromWishlist = async (productId, title, wishlistId) => {
+                    if (!productId) {
+                        alert('Produk tidak ditemukan. Coba tambahkan ulang dari katalog.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch('/api/cart/items', {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ product_id: productId, quantity: 1 }),
+                        });
+                        const data = await res.json().catch(() => null);
+                        if (!res.ok) {
+                            alert(data?.message || 'Gagal menambahkan ke keranjang');
+                            return;
+                        }
+                        // Remove from wishlist after successful add to cart
+                        if (wishlistId) {
+                            ProfileStore.removeWishlistItem(wishlistId);
+                            renderWishlist();
+                        }
+                        alert(`"${title}" berhasil ditambahkan ke keranjang dan dihapus dari wishlist!`);
+                    } catch (err) {
+                        alert('Terjadi kesalahan. Coba lagi.');
+                    }
+                };
+
+                listEl.addEventListener('click', (event) => {
+                    const removeBtn = event.target.closest('button[data-action="remove"]');
+                    if (removeBtn) {
+                        ProfileStore.removeWishlistItem(removeBtn.dataset.id);
+                        renderWishlist();
+                        return;
+                    }
+
+                    const cartBtn = event.target.closest('button[data-action="add-to-cart"]');
+                    if (cartBtn) {
+                        const refId = cartBtn.dataset.refId;
+                        const title = cartBtn.dataset.title;
+                        const wishlistId = cartBtn.dataset.wishlistId;
+                        addToCartFromWishlist(refId, title, wishlistId);
+                        return;
+                    }
+                });
+
+                clearBtn.addEventListener('click', () => {
+                    if (!confirm('Hapus semua wishlist?')) return;
+                    ProfileStore.clearWishlist();
+                    renderWishlist();
+                });
+
                 renderWishlist();
-            });
-
-            clearBtn.addEventListener('click', () => {
-                if (!confirm('Hapus semua wishlist?')) return;
-                ProfileStore.clearWishlist();
-                renderWishlist();
-            });
-
-            renderWishlist();
             })();
         });
     </script>
 </body>
+
 </html>

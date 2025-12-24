@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,16 +9,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="app.css" />
 </head>
+
 <body class="bg-gray-50 font-poppins min-h-screen">
     <header class="bg-white shadow-sm border-b border-gray-100">
         <div class="container mx-auto px-4 py-4 flex items-center justify-between">
             <div>
-                <p class="text-xs uppercase tracking-[0.4em] text-gray-400 wc-reveal" style="--reveal-delay: 40ms;">panel admin</p>
-                <h1 class="text-2xl font-bold text-dark wc-reveal" style="--reveal-delay: 120ms;">Manajemen Produk Kustom</h1>
+                <p class="text-xs uppercase tracking-[0.4em] text-gray-400 wc-reveal" style="--reveal-delay: 40ms;">
+                    panel admin</p>
+                <h1 class="text-2xl font-bold text-dark wc-reveal" style="--reveal-delay: 120ms;">Manajemen Produk
+                    Kustom</h1>
             </div>
             <div class="flex gap-3">
-                <a href="body.html" class="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:text-primary wc-reveal" style="--reveal-delay: 200ms;">Lihat Katalog</a>
-                <button id="resetProducts" class="px-4 py-2 rounded-full bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 wc-reveal" style="--reveal-delay: 260ms;">Reset Data Lokal</button>
+                <a href="body"
+                    class="px-4 py-2 rounded-full border border-gray-200 text-sm font-semibold text-gray-600 hover:text-primary wc-reveal"
+                    style="--reveal-delay: 200ms;">Lihat Katalog</a>
+                <button id="resetProducts"
+                    class="px-4 py-2 rounded-full bg-red-50 text-red-500 text-sm font-semibold hover:bg-red-100 wc-reveal"
+                    style="--reveal-delay: 260ms;">Reset Data Lokal</button>
             </div>
         </div>
     </header>
@@ -30,7 +38,8 @@
                         <h2 class="text-xl font-semibold text-dark">Daftar Produk Kustom</h2>
                         <p class="text-sm text-gray-500">Produk ini akan ditampilkan berdampingan dengan data API.</p>
                     </div>
-                    <span id="customTotal" class="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">0 item</span>
+                    <span id="customTotal"
+                        class="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-semibold">0 item</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm text-left">
@@ -52,9 +61,12 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h2 class="text-xl font-semibold text-dark">Tracking Pesanan</h2>
-                        <p class="text-sm text-gray-500">Ubah status dari <span class="font-semibold">Dikemas</span> ke <span class="font-semibold">Dikirim</span>.</p>
+                        <p class="text-sm text-gray-500">Ubah status dari <span class="font-semibold">Dikemas</span> ke
+                            <span class="font-semibold">Dikirim</span>.</p>
                     </div>
-                    <span id="ordersAdminTotal" class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-semibold">0 pesanan</span>
+                    <span id="ordersAdminTotal"
+                        class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-semibold">0
+                        pesanan</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full text-sm text-left">
@@ -82,37 +94,55 @@
                     <input type="hidden" name="productId" />
                     <label class="text-sm font-semibold text-gray-600 block">
                         Nama Produk
-                        <input type="text" name="title" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
+                        <input type="text" name="title"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Kategori
-                        <select name="category" id="categorySelect" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required>
+                        <select name="category" id="categorySelect"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required>
                             <option value="Womens Clothing">Womens Clothing</option>
                             <option value="Mens Clothing">Mens Clothing</option>
                         </select>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Harga
-                        <input type="number" min="0" step="0.01" name="price" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
+                        <input type="number" min="0" step="0.01" name="price"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Stok
-                        <input type="number" min="0" name="stock" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
+                        <input type="number" min="0" name="stock"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
-                        URL Gambar
-                        <input type="url" name="image" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="https://..." required />
+                        Gambar Produk
+                        <input type="file" name="image" accept="image/*"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                        <span class="text-xs text-gray-400">Upload file JPG/PNG max 2MB. Kosongkan jika tidak ingin
+                            mengubah gambar.</span>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Tipe
-                        <select name="type" id="typeSelect" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required></select>
+                        <select name="type" id="typeSelect"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required></select>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Deskripsi
-                        <textarea name="description" rows="4" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required></textarea>
+                        <textarea name="description" rows="4"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required></textarea>
                     </label>
-                    <button type="submit" class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan Produk</button>
-                    <button type="button" id="resetForm" class="w-full rounded-full border border-gray-200 text-gray-500 font-semibold py-3">Bersihkan Form</button>
+                    <button type="submit"
+                        class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan
+                        Produk</button>
+                    <button type="button" id="resetForm"
+                        class="w-full rounded-full border border-gray-200 text-gray-500 font-semibold py-3">Bersihkan
+                        Form</button>
                     <p id="formStatus" class="text-sm text-green-600 hidden">Produk tersimpan.</p>
                 </form>
             </article>
@@ -123,37 +153,54 @@
                         <h2 class="text-xl font-semibold text-dark">Pengaturan Jadwal Buka Bal</h2>
                         <p class="text-sm text-gray-500">Kontrol konten hero "Buka Bal" di halaman utama.</p>
                     </div>
-                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600">Live Drop</span>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600">Live
+                        Drop</span>
                 </div>
                 <form id="liveDropForm" class="space-y-4">
                     <label class="text-sm font-semibold text-gray-600 block">
                         Judul Bagian
-                        <input type="text" name="heroTitle" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Buka Bal Selanjutnya" required />
+                        <input type="text" name="heroTitle"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Buka Bal Selanjutnya" required />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Deskripsi Singkat
-                        <textarea name="heroDescription" rows="2" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Ajakan untuk join live" required></textarea>
+                        <textarea name="heroDescription" rows="2"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Ajakan untuk join live" required></textarea>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Judul Event
-                        <input type="text" name="eventTitle" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Buka Bal Spesial" required />
+                        <input type="text" name="eventTitle"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Buka Bal Spesial" required />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Subjudul / Highlight
-                        <input type="text" name="eventSubtitle" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Sabtu, 12 Mei 20:00 WIB" />
+                        <input type="text" name="eventSubtitle"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Sabtu, 12 Mei 20:00 WIB" />
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Waktu Live (WIB)
-                        <input type="datetime-local" name="eventDateTime" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
+                        <input type="datetime-local" name="eventDateTime"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
                         <span class="text-xs text-gray-400">Digunakan untuk menghitung countdown otomatis.</span>
                     </label>
                     <label class="text-sm font-semibold text-gray-600 block">
                         Teks Tombol CTA
-                        <input type="text" name="ctaLabel" class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Ingatkan Saya" required />
+                        <input type="text" name="ctaLabel"
+                            class="mt-1 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Ingatkan Saya" required />
                     </label>
                     <div class="grid sm:grid-cols-2 gap-3 pt-2">
-                        <button type="submit" class="rounded-full bg-primary text-white font-semibold py-3 shadow hover:bg-primary/90">Simpan Jadwal</button>
-                        <button type="button" id="liveDropReset" class="rounded-full border border-gray-200 text-gray-600 font-semibold py-3 hover:border-gray-400">Reset Default</button>
+                        <button type="submit"
+                            class="rounded-full bg-primary text-white font-semibold py-3 shadow hover:bg-primary/90">Simpan
+                            Jadwal</button>
+                        <button type="button" id="liveDropReset"
+                            class="rounded-full border border-gray-200 text-gray-600 font-semibold py-3 hover:border-gray-400">Reset
+                            Default</button>
                     </div>
                     <p id="liveDropStatus" class="text-sm hidden">Pengaturan tersimpan.</p>
                 </form>
@@ -170,10 +217,10 @@
                 const setLoginRedirect = (value) => {
                     try {
                         sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
-                    } catch (_) {}
+                    } catch (_) { }
                 };
                 const currentRelativeUrl = () => {
-                    const file = window.location.pathname.split('/').pop() || 'admin.html';
+                    const file = window.location.pathname.split('/').pop() || 'admin';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
                 return { setLoginRedirect, currentRelativeUrl };
@@ -464,22 +511,47 @@
                 const group = normalizeGroup(form.category.value, form.title.value);
                 const type = normalizeType(form.type.value, form.title.value, group);
                 const uuid = String(form.productId.value || '').trim();
-                const payload = {
-                    title: String(form.title.value || '').trim(),
-                    category: group,
-                    type,
-                    image: String(form.image.value || '').trim(),
-                    price: Math.max(0, parseInt(form.price.value || '0', 10) || 0),
-                    stock: Math.max(0, parseInt(form.stock.value || '0', 10) || 0),
-                    description: String(form.description.value || '').trim(),
-                };
+                
+                const formData = new FormData();
+                formData.append('title', String(form.title.value || '').trim());
+                formData.append('category', group);
+                formData.append('type', type);
+                formData.append('price', Math.max(0, parseInt(form.price.value || '0', 10) || 0));
+                formData.append('stock', Math.max(0, parseInt(form.stock.value || '0', 10) || 0));
+                formData.append('description', String(form.description.value || '').trim());
+                
+                if (form.image.files[0]) {
+                    formData.append('image', form.image.files[0]);
+                }
+
+                // If updating, we need _method=PUT because HTML forms/FormData only natively support POST/GET
+                // Laravel handles method spoofing via _method field.
+                if (uuid) {
+                    formData.append('_method', 'PUT');
+                }
+
                 (async () => {
                     try {
+                        let url = '/api/admin/products';
                         if (uuid) {
-                            await apiFetchJson(`/api/admin/products/${encodeURIComponent(uuid)}`, { method: 'PUT', body: JSON.stringify(payload) });
-                        } else {
-                            await apiFetchJson('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) });
+                            url = `/api/admin/products/${encodeURIComponent(uuid)}`;
                         }
+
+                        // Use fetch directly to avoid apiFetchJson setting Content-Type: application/json
+                        const res = await fetch(url, {
+                            method: 'POST', // Always POST when using FormData (with _method check for PUT)
+                            body: formData,
+                            headers: {
+                                'Accept': 'application/json',
+                                // Do NOT set Content-Type, browser sets it with boundary for FormData
+                            }
+                        });
+
+                        const data = await res.json().catch(() => null);
+                        if (!res.ok) {
+                            throw new Error(data?.message || `Request failed (${res.status})`);
+                        }
+
                         statusEl.textContent = 'Produk tersimpan.';
                         statusEl.classList.remove('hidden', 'text-red-500');
                         statusEl.classList.add('text-green-600');
@@ -487,7 +559,7 @@
                         await renderTable();
                         clearForm();
                     } catch (error) {
-                        statusEl.textContent = error?.data?.message || error?.message || 'Gagal menyimpan produk.';
+                        statusEl.textContent = error?.message || 'Gagal menyimpan produk.';
                         statusEl.classList.remove('hidden', 'text-green-600');
                         statusEl.classList.add('text-red-500');
                     }
@@ -559,19 +631,19 @@
             (async () => {
                 if (!window.AuthStore) {
                     alert('Sistem auth belum siap. Muat ulang halaman.');
-                    window.location.href = 'login.html';
+                    window.location.href = 'login';
                     return;
                 }
                 const me = await AuthStore.me();
                 if (!me) {
                     const next = currentRelativeUrl();
                     setLoginRedirect(next);
-                    window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                    window.location.href = `login?next=${encodeURIComponent(next)}`;
                     return;
                 }
                 if (!AuthStore.isAdmin || !AuthStore.isAdmin()) {
                     alert('Halaman ini khusus admin Wida Collection.');
-                    window.location.href = 'body.html';
+                    window.location.href = 'body';
                     return;
                 }
 
@@ -634,4 +706,5 @@
         });
     </script>
 </body>
+
 </html>

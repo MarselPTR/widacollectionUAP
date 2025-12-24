@@ -75,11 +75,20 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'category' => ['nullable', 'string', 'max:255'],
             'type' => ['nullable', 'string', 'max:255'],
-            'image' => ['nullable', 'string', 'max:255'],
+            // Allow string (URL) or File
+            'image' => ['nullable'],
             'price' => ['required', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'slug' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $imageUrl = '/storage/' . $path;
+        } elseif (!empty($data['image']) && is_string($data['image'])) {
+            $imageUrl = $data['image'];
+        }
 
         $uuid = (string) Str::uuid();
         $publicId = $this->generatePublicId();
@@ -93,7 +102,7 @@ class ProductController extends Controller
             'description' => $data['description'] ?? null,
             'category' => $data['category'] ?? null,
             'type' => $data['type'] ?? null,
-            'image' => $data['image'] ?? null,
+            'image' => $imageUrl,
             'price' => (int) $data['price'],
             'stock' => (int) $data['stock'],
             'created_at' => now(),
@@ -111,7 +120,7 @@ class ProductController extends Controller
             'description' => ['sometimes', 'nullable', 'string'],
             'category' => ['sometimes', 'nullable', 'string', 'max:255'],
             'type' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'image' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'image' => ['sometimes', 'nullable'],
             'price' => ['sometimes', 'required', 'integer', 'min:0'],
             'stock' => ['sometimes', 'required', 'integer', 'min:0'],
             'slug' => ['sometimes', 'nullable', 'string', 'max:255'],
@@ -131,11 +140,22 @@ class ProductController extends Controller
         $update = [
             'updated_at' => now(),
         ];
-        foreach (['title', 'description', 'category', 'type', 'image', 'price', 'stock'] as $key) {
+
+        // Handle normal fields
+        foreach (['title', 'description', 'category', 'type', 'price', 'stock'] as $key) {
             if (array_key_exists($key, $data)) {
                 $update[$key] = $data[$key];
             }
         }
+
+        // Handle Image
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $update['image'] = '/storage/' . $path;
+        } elseif (array_key_exists('image', $data) && is_string($data['image'])) {
+            $update['image'] = $data['image'];
+        }
+
         if ($nextSlug !== null) {
             $update['slug'] = $nextSlug;
         }
@@ -166,7 +186,8 @@ class ProductController extends Controller
     private function ensureUniqueSlug(?string $requested, string $title, ?string $ignoreUuid = null): string
     {
         $base = Str::slug(trim((string) ($requested ?: $title)));
-        if ($base === '') $base = 'produk';
+        if ($base === '')
+            $base = 'produk';
 
         $slug = $base;
         $i = 2;
@@ -176,7 +197,8 @@ class ProductController extends Controller
                 $q->where('uuid', '!=', $ignoreUuid);
             }
             $exists = $q->exists();
-            if (!$exists) return $slug;
+            if (!$exists)
+                return $slug;
 
             $slug = $base . '-' . $i;
             $i++;

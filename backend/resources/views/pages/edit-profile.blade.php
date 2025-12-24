@@ -1,212 +1,264 @@
 <!DOCTYPE html>
 <html lang="id">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Edit Profil - Wida Collection</title>
-        <link rel="stylesheet" href="output.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="app.css" />
-    </head>
-    <body class="font-poppins bg-gray-50 min-h-screen">
-        <div class="max-w-5xl mx-auto px-4 py-10 space-y-8">
-            <header class="bg-white rounded-3xl shadow-lg border border-white/70 p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Profil - Wida Collection</title>
+    <link rel="stylesheet" href="output.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="app.css" />
+</head>
+
+<body class="font-poppins bg-gray-50 min-h-screen">
+    <div class="max-w-5xl mx-auto px-4 py-10 space-y-8">
+        <header
+            class="bg-white rounded-3xl shadow-lg border border-white/70 p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+                <p class="text-sm font-semibold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida <span
+                        class="text-secondary">Collection</span></p>
+                <h1 class="text-3xl font-bold text-dark wc-reveal" style="--reveal-delay: 120ms;">Edit Profil & Alamat
+                </h1>
+                <p class="text-gray-500 wc-reveal" style="--reveal-delay: 190ms;">Perbarui identitas dan alamat
+                    pengiriman favoritmu.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <a href="profile"
+                    class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-600 hover:border-primary hover:text-primary wc-reveal"
+                    style="--reveal-delay: 250ms;">
+                    <i class="fas fa-arrow-left"></i> Kembali ke profil
+                </a>
+            </div>
+        </header>
+
+        <section class="grid gap-8 lg:grid-cols-2">
+            <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
                 <div>
-                    <p class="text-sm font-semibold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida <span class="text-secondary">Collection</span></p>
-                    <h1 class="text-3xl font-bold text-dark wc-reveal" style="--reveal-delay: 120ms;">Edit Profil & Alamat</h1>
-                    <p class="text-gray-500 wc-reveal" style="--reveal-delay: 190ms;">Perbarui identitas dan alamat pengiriman favoritmu.</p>
+                    <h2 class="text-xl font-semibold text-dark">Informasi Pribadi</h2>
+                    <p class="text-sm text-gray-500">Data ini akan muncul di halaman profil dan checkout.</p>
                 </div>
-                <div class="flex flex-wrap gap-3">
-                    <a href="profile.html" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-600 hover:border-primary hover:text-primary wc-reveal" style="--reveal-delay: 250ms;">
-                        <i class="fas fa-arrow-left"></i> Kembali ke profil
-                    </a>
-                </div>
-            </header>
 
-            <section class="grid gap-8 lg:grid-cols-2">
-                <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
-                    <div>
-                        <h2 class="text-xl font-semibold text-dark">Informasi Pribadi</h2>
-                        <p class="text-sm text-gray-500">Data ini akan muncul di halaman profil dan checkout.</p>
+                <div class="flex items-center gap-4 rounded-2xl border border-gray-100 bg-light/40 p-4">
+                    <div
+                        class="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl shadow">
+                        <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
+                        <span id="editProfileAvatarFallback" data-wc-avatar-fallback>WC</span>
                     </div>
-
-                    <div class="flex items-center gap-4 rounded-2xl border border-gray-100 bg-light/40 p-4">
-                        <div class="w-16 h-16 rounded-full overflow-hidden bg-linear-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xl shadow">
-                            <img data-wc-avatar-img class="hidden w-full h-full object-cover" alt="Foto profil" />
-                            <span id="editProfileAvatarFallback" data-wc-avatar-fallback>WC</span>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-dark">Foto Profil</p>
+                        <p class="text-xs text-gray-500">PNG/JPG, max 2MB. Akan diperkecil otomatis.</p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            <label
+                                class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:border-primary hover:text-primary cursor-pointer">
+                                <i class="fas fa-camera"></i> Pilih foto
+                                <input id="avatarFile" type="file" accept="image/*" class="hidden" />
+                            </label>
+                            <button type="button" id="avatarRemove"
+                                class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:border-red-300 hover:text-red-500">
+                                <i class="fas fa-trash"></i> Hapus
+                            </button>
                         </div>
+                        <p id="avatarStatus" class="mt-2 text-xs text-red-500 hidden"></p>
+                    </div>
+                </div>
+
+                <form id="profileForm" class="space-y-4">
+                    <label class="text-sm font-semibold text-gray-600">
+                        Nama lengkap
+                        <input type="text" name="name"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Email utama
+                        <input type="email" name="email"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Nomor WhatsApp
+                        <input type="tel" name="phone"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Bio singkat
+                        <textarea name="bio" rows="3"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Collector & Style Curator"></textarea>
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Kota domisili
+                        <input type="text" name="city"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
+                    </label>
+                    <button type="submit"
+                        class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan
+                        perubahan</button>
+                    <p id="profileStatus" class="text-sm text-green-600 hidden">Profil berhasil diperbarui.</p>
+                </form>
+            </article>
+
+            <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
+                <div class="flex flex-col gap-1">
+                    <h2 class="text-xl font-semibold text-dark">Alamat Pengiriman</h2>
+                    <p class="text-sm text-gray-500">Tambah, edit, atau jadikan alamat utama.</p>
+                </div>
+
+                <div class="rounded-2xl border border-gray-100 bg-light/40 p-4 space-y-3">
+                    <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                         <div class="flex-1">
-                            <p class="text-sm font-semibold text-dark">Foto Profil</p>
-                            <p class="text-xs text-gray-500">PNG/JPG, max 2MB. Akan diperkecil otomatis.</p>
-                            <div class="mt-3 flex flex-wrap gap-2">
-                                <label class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:border-primary hover:text-primary cursor-pointer">
-                                    <i class="fas fa-camera"></i> Pilih foto
-                                    <input id="avatarFile" type="file" accept="image/*" class="hidden" />
-                                </label>
-                                <button type="button" id="avatarRemove" class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:border-red-300 hover:text-red-500">
-                                    <i class="fas fa-trash"></i> Hapus
-                                </button>
+                            <label class="text-sm font-semibold text-gray-600">
+                                Cari lokasi (Maps)
+                                <div class="mt-2 flex gap-2">
+                                    <input id="addressSearch" type="text"
+                                        class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                                        placeholder="Contoh: Jalan Sudirman, Jakarta" />
+                                    <button type="button" id="useMyLocation"
+                                        class="shrink-0 rounded-2xl border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-600 hover:border-primary hover:text-primary"
+                                        title="Gunakan lokasi saya">
+                                        <i class="fas fa-location-crosshairs"></i>
+                                    </button>
+                                </div>
+                            </label>
+                            <div id="addressSearchResults"
+                                class="mt-2 hidden rounded-2xl border border-gray-100 bg-white p-2 text-sm text-gray-600 max-h-56 overflow-auto">
                             </div>
-                            <p id="avatarStatus" class="mt-2 text-xs text-red-500 hidden"></p>
+                            <p id="addressMapStatus" class="mt-2 text-xs text-gray-500">Klik peta / geser pin untuk
+                                mengisi alamat otomatis.</p>
                         </div>
                     </div>
+                    <div id="addressMap" class="w-full rounded-2xl overflow-hidden border border-gray-100"
+                        style="height: 260px;"></div>
+                </div>
 
-                    <form id="profileForm" class="space-y-4">
-                        <label class="text-sm font-semibold text-gray-600">
-                            Nama lengkap
-                            <input type="text" name="name" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Email utama
-                            <input type="email" name="email" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Nomor WhatsApp
-                            <input type="tel" name="phone" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Bio singkat
-                            <textarea name="bio" rows="3" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Collector & Style Curator"></textarea>
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Kota domisili
-                            <input type="text" name="city" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
-                        </label>
-                        <button type="submit" class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan perubahan</button>
-                        <p id="profileStatus" class="text-sm text-green-600 hidden">Profil berhasil diperbarui.</p>
-                    </form>
-                </article>
-
-                <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
-                    <div class="flex flex-col gap-1">
-                        <h2 class="text-xl font-semibold text-dark">Alamat Pengiriman</h2>
-                        <p class="text-sm text-gray-500">Tambah, edit, atau jadikan alamat utama.</p>
+                <form id="addressForm" class="space-y-3">
+                    <input type="hidden" name="addressId" />
+                    <input type="hidden" name="lat" />
+                    <input type="hidden" name="lng" />
+                    <label class="text-sm font-semibold text-gray-600">
+                        Nama alamat / label
+                        <input type="text" name="label"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Contoh: Rumah - Jakarta" required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Nama penerima
+                        <input type="text" name="recipient"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Nomor kontak
+                        <input type="tel" name="addressPhone"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Detail alamat lengkap
+                        <textarea name="detail" rows="3"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Jalan, no rumah, patokan" required></textarea>
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Kode pos
+                        <input type="text" name="postal"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
+                    </label>
+                    <label class="inline-flex items-center gap-3 text-sm text-gray-600">
+                        <input type="checkbox" name="isPrimary"
+                            class="rounded border-gray-300 text-primary focus:ring-primary" />
+                        Jadikan alamat utama
+                    </label>
+                    <div class="flex flex-wrap gap-3">
+                        <button type="submit"
+                            class="flex-1 rounded-full bg-primary text-white font-semibold py-2 shadow hover:bg-primary/90">
+                            Simpan alamat
+                        </button>
+                        <button type="button" id="addressReset"
+                            class="rounded-full border border-gray-200 px-6 py-2 font-semibold text-gray-500 hover:border-primary hover:text-primary">
+                            Reset form
+                        </button>
                     </div>
+                    <p id="addressStatus" class="text-sm text-green-600 hidden">Alamat tersimpan.</p>
+                </form>
+                <div class="space-y-3">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">Daftar alamat</h3>
+                    <div id="addressList" class="space-y-3 text-sm text-gray-600"></div>
+                </div>
+            </article>
+        </section>
 
-                    <div class="rounded-2xl border border-gray-100 bg-light/40 p-4 space-y-3">
-                        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                            <div class="flex-1">
-                                <label class="text-sm font-semibold text-gray-600">
-                                    Cari lokasi (Maps)
-                                    <div class="mt-2 flex gap-2">
-                                        <input id="addressSearch" type="text" class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Jalan Sudirman, Jakarta" />
-                                        <button type="button" id="useMyLocation" class="shrink-0 rounded-2xl border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-600 hover:border-primary hover:text-primary" title="Gunakan lokasi saya">
-                                            <i class="fas fa-location-crosshairs"></i>
-                                        </button>
-                                    </div>
-                                </label>
-                                <div id="addressSearchResults" class="mt-2 hidden rounded-2xl border border-gray-100 bg-white p-2 text-sm text-gray-600 max-h-56 overflow-auto"></div>
-                                <p id="addressMapStatus" class="mt-2 text-xs text-gray-500">Klik peta / geser pin untuk mengisi alamat otomatis.</p>
-                            </div>
-                        </div>
-                        <div id="addressMap" class="w-full rounded-2xl overflow-hidden border border-gray-100" style="height: 260px;"></div>
-                    </div>
+        <section>
+            <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
+                <div>
+                    <h2 class="text-xl font-semibold text-dark">Keamanan Akun</h2>
+                    <p class="text-sm text-gray-500">Perbarui email login dan password.</p>
+                </div>
+                <form id="credentialsForm" class="space-y-4">
+                    <label class="text-sm font-semibold text-gray-600">
+                        Email login
+                        <input type="email" name="loginEmail"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            required />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Password lama
+                        <input type="password" name="oldPassword"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Wajib diisi jika mengubah password" />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Password baru
+                        <input type="password" name="newPassword"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Kosongkan jika tidak ingin mengubah" />
+                    </label>
+                    <label class="text-sm font-semibold text-gray-600">
+                        Konfirmasi password baru
+                        <input type="password" name="confirmPassword"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Ulangi password baru" />
+                    </label>
+                    <button type="submit"
+                        class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan
+                        pengaturan</button>
+                    <p id="credentialsStatus" class="text-sm text-green-600 hidden">Data login diperbarui.</p>
+                </form>
+            </article>
+        </section>
+    </div>
 
-                    <form id="addressForm" class="space-y-3">
-                        <input type="hidden" name="addressId" />
-                        <input type="hidden" name="lat" />
-                        <input type="hidden" name="lng" />
-                        <label class="text-sm font-semibold text-gray-600">
-                            Nama alamat / label
-                            <input type="text" name="label" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Rumah - Jakarta" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Nama penerima
-                            <input type="text" name="recipient" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Nomor kontak
-                            <input type="tel" name="addressPhone" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Detail alamat lengkap
-                            <textarea name="detail" rows="3" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Jalan, no rumah, patokan" required></textarea>
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Kode pos
-                            <input type="text" name="postal" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" />
-                        </label>
-                        <label class="inline-flex items-center gap-3 text-sm text-gray-600">
-                            <input type="checkbox" name="isPrimary" class="rounded border-gray-300 text-primary focus:ring-primary" />
-                            Jadikan alamat utama
-                        </label>
-                        <div class="flex flex-wrap gap-3">
-                            <button type="submit" class="flex-1 rounded-full bg-primary text-white font-semibold py-2 shadow hover:bg-primary/90">
-                                Simpan alamat
-                            </button>
-                            <button type="button" id="addressReset" class="rounded-full border border-gray-200 px-6 py-2 font-semibold text-gray-500 hover:border-primary hover:text-primary">
-                                Reset form
-                            </button>
-                        </div>
-                        <p id="addressStatus" class="text-sm text-green-600 hidden">Alamat tersimpan.</p>
-                    </form>
-                    <div class="space-y-3">
-                        <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">Daftar alamat</h3>
-                        <div id="addressList" class="space-y-3 text-sm text-gray-600"></div>
-                    </div>
-                </article>
-            </section>
-
-            <section>
-                <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-4">
-                    <div>
-                        <h2 class="text-xl font-semibold text-dark">Keamanan Akun</h2>
-                        <p class="text-sm text-gray-500">Perbarui email login dan password.</p>
-                    </div>
-                    <form id="credentialsForm" class="space-y-4">
-                        <label class="text-sm font-semibold text-gray-600">
-                            Email login
-                            <input type="email" name="loginEmail" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Password lama
-                            <input type="password" name="oldPassword" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Wajib diisi jika mengubah password" />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Password baru
-                            <input type="password" name="newPassword" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Kosongkan jika tidak ingin mengubah" />
-                        </label>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Konfirmasi password baru
-                            <input type="password" name="confirmPassword" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Ulangi password baru" />
-                        </label>
-                        <button type="submit" class="w-full rounded-full bg-secondary text-white font-semibold py-3 shadow hover:bg-secondary/90">Simpan pengaturan</button>
-                        <p id="credentialsStatus" class="text-sm text-green-600 hidden">Data login diperbarui.</p>
-                    </form>
-                </article>
-            </section>
-        </div>
-
-        <script src="js/reveal.js" defer></script>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="js/profile-data.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const REDIRECT_KEY = 'wc_login_redirect';
-                const setLoginRedirect = (value) => {
-                    try {
-                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
-                    } catch (_) {}
-                };
-                const currentRelativeUrl = () => {
-                    const file = window.location.pathname.split('/').pop() || 'edit-profile.html';
-                    return `${file}${window.location.search || ''}${window.location.hash || ''}`;
-                };
-                (async () => {
-                    if (!window.ProfileStore || !window.AuthStore) {
-                        alert('Data profil tidak tersedia. Muat ulang halaman.');
-                        return;
-                    }
-                    const me = await AuthStore.me();
-                    if (!me) {
-                        const next = currentRelativeUrl();
-                        setLoginRedirect(next);
-                        window.location.href = `login.html?next=${encodeURIComponent(next)}`;
-                        return;
-                    }
-                    await ProfileStore.ready;
+    <script src="js/reveal.js" defer></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/profile-data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const REDIRECT_KEY = 'wc_login_redirect';
+            const setLoginRedirect = (value) => {
+                try {
+                    sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
+                } catch (_) { }
+            };
+            const currentRelativeUrl = () => {
+                const file = window.location.pathname.split('/').pop() || 'edit-profile';
+                return `${file}${window.location.search || ''}${window.location.hash || ''}`;
+            };
+            (async () => {
+                if (!window.ProfileStore || !window.AuthStore) {
+                    alert('Data profil tidak tersedia. Muat ulang halaman.');
+                    return;
+                }
+                const me = await AuthStore.me();
+                if (!me) {
+                    const next = currentRelativeUrl();
+                    setLoginRedirect(next);
+                    window.location.href = `login?next=${encodeURIComponent(next)}`;
+                    return;
+                }
+                await ProfileStore.ready;
 
                 const profileForm = document.getElementById('profileForm');
                 const addressForm = document.getElementById('addressForm');
@@ -733,8 +785,9 @@
                 fillCredentialsForm(account);
                 renderAddresses();
                 setupAddressMap();
-                })();
-            });
-        </script>
-    </body>
+            })();
+        });
+    </script>
+</body>
+
 </html>

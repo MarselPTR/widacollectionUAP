@@ -104,22 +104,69 @@ class OrderController extends Controller
             }
             $total = $subtotal + $shippingValue;
 
+            $removedItems = [];
+
             // Stock check + decrement
             foreach ($items as $it) {
-                if (!$it->product_id) continue;
+                if (!$it->product_id)
+                    continue;
 
-                $affected = DB::table('custom_products')
-                    ->where('public_id', $it->product_id)
-                    ->where('stock', '>=', (int) $it->quantity)
-                    ->decrement('stock', (int) $it->quantity);
+                $product = DB::table('custom_products')->where('public_id', $it->product_id)->first();
 
-                if ($affected < 1) {
-                    $p = DB::table('custom_products')->where('public_id', $it->product_id)->first();
-                    $title = $p ? (string) ($p->title ?? 'Produk') : (string) ($it->name ?? 'Produk');
-                    return ['error' => response()->json([
-                        'message' => 'Stok tidak mencukupi untuk ' . $title,
-                    ], 422)];
+                // Self-healing: if ID mismatch (e.g. after re-seed), try finding by name
+                if (!$product && $it->name) {
+                    $product = DB::table('custom_products')->where('title', $it->name)->first();
+                    if ($product) {
+                        // Check if we already have this valid product in the cart (to avoid Unique Constraint violation)
+                        $existing = DB::table('cart_items')
+                            ->where('cart_id', $cart->id)
+                            ->where('product_id', $product->public_id)
+                            ->first();
+
+                        if ($existing) {
+                            // Merge: Add qty to existing, delete stale current
+                            DB::table('cart_items')->where('id', $existing->id)->increment('quantity', (int) $it->quantity);
+                            DB::table('cart_items')->where('id', $it->id)->delete();
+
+                            // We processed this item by merging it. We still need to decrement stock for THIS item's quantity 
+                            // to keep the order logic consistent (since we are creating an order for it).
+                            // Proceed as if it's a valid item for the duration of this transaction.
+                        } else {
+                            // No duplicate, safe to update
+                            DB::table('cart_items')->where('id', $it->id)->update([
+                                'product_id' => $product->public_id,
+                                'updated_at' => now(),
+                            ]);
+                        }
+                    }
                 }
+
+                if (!$product) {
+                    // Auto-remove dead items
+                    DB::table('cart_items')->where('id', $it->id)->delete();
+                    $removedItems[] = $it->name;
+                    continue;
+                }
+
+                if ((int) $product->stock < (int) $it->quantity) {
+                    return [
+                        'error' => response()->json([
+                            'message' => 'Stok tidak mencukupi untuk ' . $product->title . '. Tersisa: ' . $product->stock,
+                        ], 422)
+                    ];
+                }
+
+                DB::table('custom_products')
+                    ->where('id', $product->id)
+                    ->decrement('stock', (int) $it->quantity);
+            }
+
+            if (!empty($removedItems)) {
+                return [
+                    'error' => response()->json([
+                        'message' => 'Beberapa produk tidak lagi tersedia dan telah dihapus dari keranjang: ' . implode(', ', $removedItems) . '. Silakan review dan checkout ulang.',
+                    ], 422)
+                ];
             }
 
             $orderUuid = (string) Str::uuid();
@@ -178,11 +225,13 @@ class OrderController extends Controller
                 'updated_at' => now(),
             ]);
 
-            return ['ok' => response()->json([
-                'data' => [
-                    'order' => $order,
-                ],
-            ], 201)];
+            return [
+                'ok' => response()->json([
+                    'data' => [
+                        'order' => $order,
+                    ],
+                ], 201)
+            ];
         });
 
         if (isset($result['error'])) {
@@ -214,8 +263,10 @@ class OrderController extends Controller
         ]);
 
         $order = DB::table('orders')->where('uuid', $uuid)->first();
-        if (!$order) return response()->json(['message' => 'Order not found.'], 404);
-        if ($order->status !== 'packed') return response()->json(['message' => 'Invalid status transition.'], 422);
+        if (!$order)
+            return response()->json(['message' => 'Order not found.'], 404);
+        if ($order->status !== 'packed')
+            return response()->json(['message' => 'Invalid status transition.'], 422);
 
         DB::table('orders')->where('id', $order->id)->update([
             'status' => 'shipped',
@@ -230,8 +281,10 @@ class OrderController extends Controller
     public function adminMarkDelivered(string $uuid)
     {
         $order = DB::table('orders')->where('uuid', $uuid)->first();
-        if (!$order) return response()->json(['message' => 'Order not found.'], 404);
-        if ($order->status !== 'shipped') return response()->json(['message' => 'Invalid status transition.'], 422);
+        if (!$order)
+            return response()->json(['message' => 'Order not found.'], 404);
+        if ($order->status !== 'shipped')
+            return response()->json(['message' => 'Invalid status transition.'], 422);
 
         DB::table('orders')->where('id', $order->id)->update([
             'status' => 'delivered',

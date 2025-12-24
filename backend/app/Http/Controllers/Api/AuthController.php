@@ -31,12 +31,12 @@ class AuthController extends Controller
         ]);
 
         $issued = $jwt->issue($user);
-        $token = (string) ($issued['token'] ?? '');
+        $token = (string) ($issued['access_token'] ?? '');
         $ttlMinutes = (int) config('jwt.ttl_minutes', 120);
 
         return response()
             ->json($issued, 201)
-            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, true, false, 'Lax');
+            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, false, false, 'Lax');
     }
 
     public function login(Request $request, JwtService $jwt)
@@ -54,12 +54,12 @@ class AuthController extends Controller
         }
 
         $issued = $jwt->issue($user);
-        $token = (string) ($issued['token'] ?? '');
+        $token = (string) ($issued['access_token'] ?? '');
         $ttlMinutes = (int) config('jwt.ttl_minutes', 120);
 
         return response()
             ->json($issued)
-            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, true, false, 'Lax');
+            ->cookie(self::TOKEN_COOKIE, $token, $ttlMinutes, '/', null, false, false, false, 'Lax');
     }
 
     public function me(Request $request)
@@ -170,7 +170,8 @@ class AuthController extends Controller
     private function isAdminEmail(string $email): bool
     {
         $raw = (string) env('ADMIN_EMAILS', '');
-        if ($raw === '') return false;
+        if ($raw === '')
+            return false;
         $list = array_filter(array_map('trim', explode(',', strtolower($raw))));
         return in_array(strtolower($email), $list, true);
     }

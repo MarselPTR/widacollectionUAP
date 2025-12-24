@@ -1,7 +1,7 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // Body.html-only behaviors
+document.addEventListener('DOMContentLoaded', function () {
+  // body-only behaviors
   try {
-    if (document.body && /\/body\.html(\?.*)?$/.test(window.location.pathname)) {
+    if (document.body && /\/body(\?.*)?$/.test(window.location.pathname)) {
       // Header theme toggle: when header overlaps the hero, use a dark translucent background + light text;
       // after scrolling past hero, switch to light background + dark text.
       const headerEl = document.querySelector('header.wc-header') || document.querySelector('header');
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
           document.fonts.ready.then(() => {
             recomputeSectionTops();
             requestUpdate();
-          }).catch(() => {});
+          }).catch(() => { });
         }
         window.addEventListener('hashchange', () => {
           activateFromHash();
@@ -286,10 +286,10 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   const formatEventSubtitle = (settings) => {
-    if (settings.eventSubtitle && settings.eventSubtitle.trim()) {
-      return settings.eventSubtitle.trim();
+    if (settings.event_subtitle && settings.event_subtitle.trim()) {
+      return settings.event_subtitle.trim();
     }
-    const target = parseEventDate(settings.eventDateTime);
+    const target = parseEventDate(settings.event_date_time);
     if (!target) return 'Jadwal akan diumumkan';
     const formatted = target.toLocaleString('id-ID', {
       weekay: 'long',
@@ -358,21 +358,21 @@ document.addEventListener('DOMContentLoaded', function() {
   const applyLiveDropSettings = (settings) => {
     if (!settings) return;
     if (liveDropElements.sectionTitle) {
-      liveDropElements.sectionTitle.textContent = settings.heroTitle || 'Buka Bal Selanjutnya';
+      liveDropElements.sectionTitle.textContent = settings.hero_title || 'Buka Bal Selanjutnya';
     }
     if (liveDropElements.sectionDesc) {
-      liveDropElements.sectionDesc.textContent = settings.heroDescription || '';
+      liveDropElements.sectionDesc.textContent = settings.hero_description || '';
     }
     if (liveDropElements.eventTitle) {
-      liveDropElements.eventTitle.textContent = settings.eventTitle || '';
+      liveDropElements.eventTitle.textContent = settings.event_title || '';
     }
     if (liveDropElements.eventSubtitle) {
       liveDropElements.eventSubtitle.textContent = formatEventSubtitle(settings);
     }
     if (liveDropElements.ctaLabel) {
-      liveDropElements.ctaLabel.textContent = settings.ctaLabel || 'Ingatkan Saya';
+      liveDropElements.ctaLabel.textContent = settings.cta_label || 'Ingatkan Saya';
     }
-    liveDropTargetDate = parseEventDate(settings.eventDateTime);
+    liveDropTargetDate = parseEventDate(settings.event_date_time);
     if (!liveDropTargetDate) {
       stopLiveDropCountdown();
       setCountdownSlots();
@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
           if (idx < existing.length - 2) node.remove();
         });
       }
-    } catch (_) {}
+    } catch (_) { }
 
     const rect = btn.getBoundingClientRect();
     const x = evt?.clientX ? evt.clientX - rect.left : rect.width / 2;
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const me = await ensureMe();
     if (!me) {
-      window.location.href = 'login.html';
+      window.location.href = 'login';
       return false;
     }
 
@@ -581,14 +581,14 @@ document.addEventListener('DOMContentLoaded', function() {
       return true;
     } catch (err) {
       if (err && err.status === 401) {
-        window.location.href = 'login.html';
+        window.location.href = 'login';
         return false;
       }
 
       const message = err?.data?.message || err?.message || 'Gagal menambahkan ke keranjang.';
       try {
         window.alert(message);
-      } catch (_) {}
+      } catch (_) { }
       return false;
     }
   };
@@ -802,12 +802,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const detailRef = p.slug || p.public_id || p.uuid;
-    const detailUrl = `product-detail.html?id=${encodeURIComponent(detailRef)}`;
+    const detailUrl = `product-detail?id=${encodeURIComponent(detailRef)}`;
     const priceRaw = Number(p.price) || 0;
     return `
       <article class="product-card card-hover" data-id="${p.public_id}" data-product-public-id="${p.public_id}" data-detail-url="${detailUrl}" data-image="${p.image}" data-price-raw="${priceRaw}">
-        <div class="product-card__media">
-          <img src="${p.image}" alt="${p.title}" loading="lazy" referrerpolicy="no-referrer" />
+        <div class="product-card__media" style="aspect-ratio: 1/1; background-color: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 12px; padding: 12px; border: 1px solid #f0f0f0;">
+          <img src="${p.image}" alt="${p.title}" loading="lazy" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: contain; mix-blend-mode: multiply;" />
           <span class="product-card__badge product-card__badge--${variant}">${label}</span>
         </div>
         <div class="product-card__body">
@@ -847,8 +847,8 @@ document.addEventListener('DOMContentLoaded', function() {
       filtered.sort((a, b) => (isFemalePreferred(b) - isFemalePreferred(a)));
       dataCache = filtered;
 
-      await ensureReviewSummaries(dataCache.slice(0, pageSize));
-    
+      await ensureReviewSummaries(dataCache);
+
       updateTeasersFromProducts();
       productsLoading.classList.add('hidden');
       await renderPage();
@@ -877,7 +877,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function renderPage() {
+  async function renderPage() {
     if (!productsGrid) return;
     const start = (page - 1) * pageSize;
     const slice = dataCache.slice(start, start + pageSize);
@@ -885,6 +885,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
       return;
     }
+    // Ensure review summaries are loaded for this slice before rendering
+    await ensureReviewSummaries(slice);
     const cards = slice.map((p, i) => productCard(p, i)).join('');
     productsGrid.insertAdjacentHTML('beforeend', cards);
     attachCartListeners();
@@ -978,24 +980,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       };
     }
-   
+
     modal.addEventListener('click', (e) => {
       if (e.target === modal) modal.classList.add('hidden');
     }, { once: true });
 
-      if (productPublicId) {
-        getReviewSummary(productPublicId).then((summary) => {
-          if (modal.dataset.productId !== productPublicId) return;
-          const starsEl = document.getElementById('productDetailStars');
-          const ratingEl = document.getElementById('productDetailRatingValue');
-          const countEl = document.getElementById('productDetailReviewCount');
-          const avg = summary && summary.count ? Number(summary.avg || 0) : 0;
-          const display = summary && summary.count ? avg.toFixed(1) : '-';
-          if (starsEl) starsEl.textContent = stars(avg);
-          if (ratingEl) ratingEl.textContent = display;
-          if (countEl) countEl.textContent = `Review: ${Number(summary?.count || 0)}`;
-        }).catch(() => {});
-      }
+    if (productPublicId) {
+      getReviewSummary(productPublicId).then((summary) => {
+        if (modal.dataset.productId !== productPublicId) return;
+        const starsEl = document.getElementById('productDetailStars');
+        const ratingEl = document.getElementById('productDetailRatingValue');
+        const countEl = document.getElementById('productDetailReviewCount');
+        const avg = summary && summary.count ? Number(summary.avg || 0) : 0;
+        const display = summary && summary.count ? avg.toFixed(1) : '-';
+        if (starsEl) starsEl.textContent = stars(avg);
+        if (ratingEl) ratingEl.textContent = display;
+        if (countEl) countEl.textContent = `Review: ${Number(summary?.count || 0)}`;
+      }).catch(() => { });
+    }
   }
 
   function attachDetailListeners() {
@@ -1032,7 +1034,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function attachCartListeners() {
     document.querySelectorAll('.add-to-cart').forEach(btn => {
       if (btn.dataset.bound === '1') return;
-      btn.addEventListener('click', async function(e) {
+      btn.addEventListener('click', async function (e) {
         e.preventDefault();
         createRipple(btn, e);
         const card = btn.closest('.card-hover');
@@ -1059,9 +1061,13 @@ document.addEventListener('DOMContentLoaded', function() {
       loadMoreBtn = btn;
     }
     if (loadMoreBtn && !loadMoreBtn.dataset.bound) {
-      loadMoreBtn.addEventListener('click', (e) => {
+      loadMoreBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        renderPage();
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Memuat...';
+        await renderPage();
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Muat Lebih Banyak';
       });
       loadMoreBtn.dataset.bound = '1';
     }
@@ -1135,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
           panel.style.left = '';
           panel.style.top = '';
         }
-      } catch (_) {}
+      } catch (_) { }
 
       if (searchInput) {
         searchInput.focus();
@@ -1166,7 +1172,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const wishlistNavigates = wb && wb.dataset && wb.dataset.navTarget === 'wishlist';
 
   if (pb && profileNavigates && window.AuthStore && typeof AuthStore.isAdmin === 'function' && AuthStore.isLoggedIn?.() && AuthStore.isAdmin()) {
-    pb.setAttribute('href', 'profile-admin.html');
+    pb.setAttribute('href', 'profile-admin');
   }
 
   if (!cartNavigates && cb && ccbtn) {
@@ -1206,7 +1212,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const profileModalCTA = document.querySelector('#profileModal .btn-main');
   if (profileModalCTA) {
     profileModalCTA.addEventListener('click', () => {
-      window.location.href = 'login.html';
+      window.location.href = 'login';
     });
   }
 
@@ -1215,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Tampilan isi keranjang
   const cartBtn = document.getElementById('cartBtn');
   if (cartBtn && cartBtn.dataset.navTarget !== 'cart') {
-    cartBtn.addEventListener('click', async function() {
+    cartBtn.addEventListener('click', async function () {
       const listEl = document.getElementById('cartItems');
       if (!listEl) return;
       const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' });
@@ -1338,17 +1344,17 @@ document.addEventListener('DOMContentLoaded', function() {
   // Checkout button redirect
   const checkoutBtn = document.getElementById('checkoutBtn');
   if (checkoutBtn) {
-    checkoutBtn.onclick = function(e) {
+    checkoutBtn.onclick = function (e) {
       e.preventDefault();
       if (!isLoggedIn()) {
         toggleModal('profileModal', true);
         return;
       }
-      window.location.href = 'checkout.html';
+      window.location.href = 'checkout';
     };
   }
 
-  // Contact form (body.html) -> admin inbox sync
+  // Contact form (body) -> admin inbox sync
   const contactForm = document.getElementById('contactForm');
   if (contactForm) {
     const statusEl = document.getElementById('contactFormStatus');
@@ -1380,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const profile = ProfileStore.getProfileData();
         if (nameEl && !nameEl.value) nameEl.value = profile?.name || '';
         if (emailEl && !emailEl.value) emailEl.value = profile?.email || '';
-      } catch (_) {}
+      } catch (_) { }
     })();
 
     contactForm.addEventListener('submit', async (e) => {
@@ -1416,7 +1422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             email,
             subject,
             message,
-            source: 'body.html#contact',
+            source: 'body#contact',
           }),
         });
 

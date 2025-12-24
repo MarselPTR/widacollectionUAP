@@ -96,10 +96,10 @@
             </section>
 
             <div class="flex flex-wrap justify-center gap-4">
-                <a href="body.html" class="inline-flex items-center gap-2 rounded-full bg-secondary text-white px-8 py-3 font-semibold shadow hover:bg-secondary/90 wc-reveal" style="--reveal-delay: 280ms;">
+                <a href="body" class="inline-flex items-center gap-2 rounded-full bg-secondary text-white px-8 py-3 font-semibold shadow hover:bg-secondary/90 wc-reveal" style="--reveal-delay: 280ms;">
                     <i class="fas fa-house"></i> Kembali beranda
                 </a>
-                <a href="profile.html" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-8 py-3 font-semibold text-gray-600 hover:border-primary hover:text-primary wc-reveal" style="--reveal-delay: 340ms;">
+                <a href="profile" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-8 py-3 font-semibold text-gray-600 hover:border-primary hover:text-primary wc-reveal" style="--reveal-delay: 340ms;">
                     <i class="fas fa-user"></i> Lihat profil
                 </a>
             </div>
@@ -107,7 +107,7 @@
             <div id="successFallback" class="hidden text-center space-y-3">
                 <p class="text-lg font-semibold text-dark">Riwayat pesanan tidak ditemukan.</p>
                 <p class="text-gray-500">Silakan kembali ke katalog dan lakukan pemesanan baru.</p>
-                <a href="body.html" class="inline-flex items-center gap-2 rounded-full bg-primary text-white px-6 py-3 font-semibold">Mulai belanja</a>
+                <a href="body" class="inline-flex items-center gap-2 rounded-full bg-primary text-white px-6 py-3 font-semibold">Mulai belanja</a>
             </div>
         </div>
 
@@ -122,7 +122,7 @@
                     } catch (_) {}
                 };
                 const currentRelativeUrl = () => {
-                    const file = window.location.pathname.split('/').pop() || 'success.html';
+                    const file = window.location.pathname.split('/').pop() || 'success';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
 
@@ -215,7 +215,7 @@
                     if (!isAuthed) {
                         const next = currentRelativeUrl();
                         setLoginRedirect(next);
-                        window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                        window.location.href = `login?next=${encodeURIComponent(next)}`;
                         return;
                     }
 

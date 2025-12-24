@@ -121,7 +121,7 @@
                         </label>
                         <p id="checkoutError" class="text-sm text-red-500 hidden">Terjadi kesalahan. Silakan coba lagi.</p>
                         <div class="flex flex-wrap gap-4">
-                            <a href="cart.html" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-500 hover:border-primary hover:text-primary">
+                            <a href="cart" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-500 hover:border-primary hover:text-primary">
                                 <i class="fas fa-arrow-left"></i> Kembali ke keranjang
                             </a>
                             <button type="submit" id="payButton" class="inline-flex flex-1 items-center justify-center rounded-full bg-secondary text-white font-semibold py-3 shadow-lg hover:bg-secondary/90 disabled:opacity-60 disabled:cursor-not-allowed">
@@ -197,7 +197,7 @@
                     } catch (_) {}
                 };
                 const currentRelativeUrl = () => {
-                    const file = window.location.pathname.split('/').pop() || 'checkout.html';
+                    const file = window.location.pathname.split('/').pop() || 'checkout';
                     return `${file}${window.location.search || ''}${window.location.hash || ''}`;
                 };
                 (async () => {
@@ -209,7 +209,7 @@
                     if (!me) {
                         const next = currentRelativeUrl();
                         setLoginRedirect(next);
-                        window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+                        window.location.href = `login?next=${encodeURIComponent(next)}`;
                         return;
                     }
 
@@ -289,7 +289,7 @@
                     applyShippingFromCart();
 
                     if (!cartItems.length) {
-                        window.location.href = 'cart.html';
+                        window.location.href = 'cart';
                         return false;
                     }
                     return true;
@@ -806,7 +806,7 @@
                         if (!orderUuid) {
                             throw new Error('Order berhasil dibuat, tapi UUID tidak ditemukan.');
                         }
-                        window.location.href = `success.html?order=${encodeURIComponent(orderUuid)}`;
+                        window.location.href = `success?order=${encodeURIComponent(orderUuid)}`;
                     } catch (error) {
                         const msg = error?.data?.message || error?.message || 'Terjadi kesalahan. Silakan coba lagi.';
                         checkoutError.textContent = msg;

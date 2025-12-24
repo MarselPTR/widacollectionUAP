@@ -70,7 +70,7 @@
         </form>
         <p id="registerStatus" class="text-center text-sm text-red-500 mt-3 hidden"></p>
         <div class="text-center mt-4">
-            <span class="wc-reveal" style="--reveal-delay: 240ms;">Sudah punya akun? <a href="login.html" class="link-register">Login</a></span>
+            <span class="wc-reveal" style="--reveal-delay: 240ms;">Sudah punya akun? <a href="login" class="link-register">Login</a></span>
         </div>
     </div>
     <script src="js/reveal.js" defer></script>
@@ -106,7 +106,7 @@
                 // phone is stored in profile table.
                 await ProfileStore.saveProfileData({ name, phone });
                 statusEl.classList.add('hidden');
-                window.location.href = 'profile.html';
+                window.location.href = 'profile';
             } catch (error) {
                 statusEl.textContent = error.message || 'Gagal mendaftar. Coba lagi.';
                 statusEl.classList.remove('hidden');

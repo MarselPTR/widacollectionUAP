@@ -1,219 +1,276 @@
 <!DOCTYPE html>
 <html lang="id">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Checkout & Pembayaran - Wida Collection</title>
-        <link rel="stylesheet" href="output.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-        <link rel="stylesheet" href="app.css" />
-    </head>
-    <body class="font-poppins bg-gray-50 min-h-screen">
-        <div class="max-w-6xl mx-auto px-4 py-10 space-y-8">
-            <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white rounded-2xl shadow-lg border border-white/70 p-6">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout & Pembayaran - Wida Collection</title>
+    <link rel="stylesheet" href="output.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="app.css" />
+</head>
+
+<body class="font-poppins bg-gray-50 min-h-screen">
+    <div class="max-w-6xl mx-auto px-4 py-10 space-y-8">
+        <header
+            class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between bg-white rounded-2xl shadow-lg border border-white/70 p-6">
+            <div>
+                <p class="text-sm font-semibold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida <span
+                        class="text-secondary">Collection</span></p>
+                <p class="text-xs uppercase tracking-[0.4em] text-secondary font-semibold wc-reveal"
+                    style="--reveal-delay: 90ms;">Langkah 2 dari 3</p>
+                <h1 class="text-3xl font-bold text-dark wc-reveal" style="--reveal-delay: 140ms;">Checkout & Pembayaran
+                </h1>
+                <p class="text-gray-500 wc-reveal" style="--reveal-delay: 210ms;">Isi detail pengiriman dan konfirmasi
+                    pesananmu.</p>
+            </div>
+            <div class="flex flex-wrap gap-3 text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">
+                <span class="flex items-center gap-2 text-primary"><i class="fas fa-circle-check"></i> Keranjang</span>
+                <span class="h-px w-10 bg-gray-200"></span>
+                <span class="flex items-center gap-2 text-secondary"><i class="fas fa-circle"></i> Checkout</span>
+                <span class="h-px w-10 bg-gray-200"></span>
+                <span class="flex items-center gap-2 text-gray-300"><i class="fas fa-circle"></i> Berhasil</span>
+            </div>
+        </header>
+
+        <section class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
+            <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-5">
                 <div>
-                    <p class="text-sm font-semibold text-primary wc-reveal" style="--reveal-delay: 40ms;">Wida <span class="text-secondary">Collection</span></p>
-                    <p class="text-xs uppercase tracking-[0.4em] text-secondary font-semibold wc-reveal" style="--reveal-delay: 90ms;">Langkah 2 dari 3</p>
-                    <h1 class="text-3xl font-bold text-dark wc-reveal" style="--reveal-delay: 140ms;">Checkout & Pembayaran</h1>
-                    <p class="text-gray-500 wc-reveal" style="--reveal-delay: 210ms;">Isi detail pengiriman dan konfirmasi pesananmu.</p>
+                    <h2 class="text-xl font-semibold text-dark">Detail Pengiriman</h2>
+                    <p class="text-sm text-gray-500">Pastikan informasi berikut sesuai sebelum melakukan pembayaran.</p>
                 </div>
-                <div class="flex flex-wrap gap-3 text-sm font-semibold text-gray-500 uppercase tracking-[0.3em]">
-                    <span class="flex items-center gap-2 text-primary"><i class="fas fa-circle-check"></i> Keranjang</span>
-                    <span class="h-px w-10 bg-gray-200"></span>
-                    <span class="flex items-center gap-2 text-secondary"><i class="fas fa-circle"></i> Checkout</span>
-                    <span class="h-px w-10 bg-gray-200"></span>
-                    <span class="flex items-center gap-2 text-gray-300"><i class="fas fa-circle"></i> Berhasil</span>
-                </div>
-            </header>
-
-            <section class="grid gap-8 lg:grid-cols-[1.2fr,0.8fr]">
-                <article class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6 space-y-5">
-                    <div>
-                        <h2 class="text-xl font-semibold text-dark">Detail Pengiriman</h2>
-                        <p class="text-sm text-gray-500">Pastikan informasi berikut sesuai sebelum melakukan pembayaran.</p>
+                <form id="checkoutForm" class="space-y-4">
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="text-sm font-semibold text-gray-600">
+                            Nama lengkap
+                            <input type="text" name="fullname"
+                                class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                                placeholder="Contoh: Rahma Adinda" required />
+                        </label>
+                        <label class="text-sm font-semibold text-gray-600">
+                            Nomor WhatsApp
+                            <input type="tel" name="phone"
+                                class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                                placeholder="08xxxxxxxxxx" required />
+                        </label>
                     </div>
-                    <form id="checkoutForm" class="space-y-4">
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <label class="text-sm font-semibold text-gray-600">
-                                Nama lengkap
-                                <input type="text" name="fullname" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Rahma Adinda" required />
-                            </label>
-                            <label class="text-sm font-semibold text-gray-600">
-                                Nomor WhatsApp
-                                <input type="tel" name="phone" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="08xxxxxxxxxx" required />
-                            </label>
-                        </div>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Email aktif
-                            <input type="email" name="email" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="kamu@email.com" />
-                        </label>
-                        <div class="text-sm font-semibold text-gray-600 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span>Alamat lengkap</span>
-                                <button type="button" id="toggleAddressForm" class="text-xs font-semibold text-primary hover:text-secondary">Tambah alamat baru</button>
-                            </div>
-                            <div id="savedAddressList" class="space-y-3 text-sm text-gray-600"></div>
-                            <textarea name="address" rows="3" class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Tulis alamat lengkap beserta patokan" required></textarea>
-                            <div id="quickAddressForm" class="hidden border border-gray-100 rounded-2xl p-4 bg-gray-50 space-y-3 text-sm text-gray-600">
-                                <p class="font-semibold text-dark">Tambah alamat pengiriman</p>
-
-                                <div class="rounded-2xl border border-gray-100 bg-white p-3 space-y-2">
-                                    <label class="text-xs font-semibold text-gray-600 block">
-                                        Cari lokasi (Maps)
-                                        <div class="mt-2 flex gap-2">
-                                            <input id="quickAddressSearch" type="text" class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Contoh: Jalan Sudirman, Jakarta" />
-                                            <button type="button" id="quickUseMyLocation" class="shrink-0 rounded-2xl border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-600 hover:border-primary hover:text-primary" title="Gunakan lokasi saya">
-                                                <i class="fas fa-location-crosshairs"></i>
-                                            </button>
-                                        </div>
-                                    </label>
-                                    <div id="quickAddressSearchResults" class="hidden rounded-2xl border border-gray-100 bg-white p-2 text-sm text-gray-600 max-h-56 overflow-auto"></div>
-                                    <p id="quickAddressMapStatus" class="text-xs text-gray-500">Klik peta / geser pin untuk mengisi alamat otomatis.</p>
-                                    <div id="quickAddressMap" class="w-full rounded-2xl overflow-hidden border border-gray-100" style="height: 220px;"></div>
-                                </div>
-
-                                <input type="text" id="quickAddressLabel" class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Label alamat (contoh: Rumah)" />
-                                <input type="text" id="quickAddressRecipient" class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Nama penerima" />
-                                <input type="tel" id="quickAddressPhone" class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Nomor kontak" />
-                                <textarea id="quickAddressDetail" rows="2" class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Detail alamat"></textarea>
-                                <input type="text" id="quickAddressPostal" class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Kode pos" />
-                                <input type="hidden" id="quickAddressLat" />
-                                <input type="hidden" id="quickAddressLng" />
-                                <label class="inline-flex items-center gap-3 text-xs text-gray-500">
-                                    <input type="checkbox" id="quickAddressPrimary" class="rounded border-gray-300 text-primary focus:ring-primary" />
-                                    Jadikan alamat utama
-                                </label>
-                                <div class="flex flex-wrap gap-3">
-                                    <button type="button" id="quickAddressSave" class="flex-1 rounded-full bg-primary text-white font-semibold py-2">Simpan alamat</button>
-                                    <button type="button" id="quickAddressCancel" class="rounded-full border border-gray-200 px-5 py-2 font-semibold text-gray-500 hover:border-primary hover:text-primary">Batal</button>
-                                </div>
-                                <p id="quickAddressStatus" class="text-xs text-green-600 hidden">Alamat ditambahkan.</p>
-                            </div>
-                        </div>
-                        <label class="text-sm font-semibold text-gray-600">
-                            Catatan tambahan
-                            <textarea name="notes" rows="2" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Opsional"></textarea>
-                        </label>
-                        <div class="grid gap-4 md:grid-cols-2">
-                            <label class="text-sm font-semibold text-gray-600">
-                                Metode pengiriman
-                                <select id="shippingSelect" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary">
-                                    <option value="0" data-label="Reguler 3-4 hari">Reguler (3-4 hari) - Gratis</option>
-                                    <option value="20000" data-label="Kilat 1-2 hari">Kilat (1-2 hari) - Rp20.000</option>
-                                    <option value="50000" data-label="Same day">Same day - Rp50.000</option>
-                                </select>
-                            </label>
-                            <label class="text-sm font-semibold text-gray-600">
-                                Metode pembayaran
-                                <select name="payment" class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" required>
-                                    <option value="">Pilih metode</option>
-                                    <option value="transfer">Transfer bank</option>
-                                    <option value="ewallet">E-Wallet (OVO, DANA, dll)</option>
-                                    <option value="cod">COD / Bayar ditempat</option>
-                                </select>
-                            </label>
-                        </div>
-                        <label class="flex items-start gap-3 text-sm text-gray-500">
-                            <input type="checkbox" required class="mt-1 rounded border-gray-300 text-primary focus:ring-primary" />
-                            Saya menyetujui S&K Wida Collection serta kebijakan pengembalian barang.
-                        </label>
-                        <p id="checkoutError" class="text-sm text-red-500 hidden">Terjadi kesalahan. Silakan coba lagi.</p>
-                        <div class="flex flex-wrap gap-4">
-                            <a href="cart" class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-500 hover:border-primary hover:text-primary">
-                                <i class="fas fa-arrow-left"></i> Kembali ke keranjang
-                            </a>
-                            <button type="submit" id="payButton" class="inline-flex flex-1 items-center justify-center rounded-full bg-secondary text-white font-semibold py-3 shadow-lg hover:bg-secondary/90 disabled:opacity-60 disabled:cursor-not-allowed">
-                                Bayar sekarang
-                            </button>
-                        </div>
-                    </form>
-                </article>
-
-                <aside class="space-y-5">
-                    <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+                    <label class="text-sm font-semibold text-gray-600">
+                        Email aktif
+                        <input type="email" name="email"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="kamu@email.com" />
+                    </label>
+                    <div class="text-sm font-semibold text-gray-600 space-y-3">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-xl font-semibold text-dark">Ringkasan Pesanan</h2>
-                            <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Real-time</span>
+                            <span>Alamat lengkap</span>
+                            <button type="button" id="toggleAddressForm"
+                                class="text-xs font-semibold text-primary hover:text-secondary">Tambah alamat
+                                baru</button>
                         </div>
-                        <ul id="summaryList" class="mt-5 space-y-4 text-sm text-gray-600"></ul>
-                        <div class="mt-5 space-y-3 text-sm text-gray-600">
-                            <div class="flex items-center justify-between">
-                                <span>Subtotal</span>
-                                <strong id="summarySubtotal">Rp0</strong>
+                        <div id="savedAddressList" class="space-y-3 text-sm text-gray-600"></div>
+                        <textarea name="address" rows="3"
+                            class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Tulis alamat lengkap beserta patokan" required></textarea>
+                        <div id="quickAddressForm"
+                            class="hidden border border-gray-100 rounded-2xl p-4 bg-gray-50 space-y-3 text-sm text-gray-600">
+                            <p class="font-semibold text-dark">Tambah alamat pengiriman</p>
+
+                            <div class="rounded-2xl border border-gray-100 bg-white p-3 space-y-2">
+                                <label class="text-xs font-semibold text-gray-600 block">
+                                    Cari lokasi (Maps)
+                                    <div class="mt-2 flex gap-2">
+                                        <input id="quickAddressSearch" type="text"
+                                            class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                                            placeholder="Contoh: Jalan Sudirman, Jakarta" />
+                                        <button type="button" id="quickUseMyLocation"
+                                            class="shrink-0 rounded-2xl border border-gray-200 bg-white px-4 py-2 font-semibold text-gray-600 hover:border-primary hover:text-primary"
+                                            title="Gunakan lokasi saya">
+                                            <i class="fas fa-location-crosshairs"></i>
+                                        </button>
+                                    </div>
+                                </label>
+                                <div id="quickAddressSearchResults"
+                                    class="hidden rounded-2xl border border-gray-100 bg-white p-2 text-sm text-gray-600 max-h-56 overflow-auto">
+                                </div>
+                                <p id="quickAddressMapStatus" class="text-xs text-gray-500">Klik peta / geser pin untuk
+                                    mengisi alamat otomatis.</p>
+                                <div id="quickAddressMap"
+                                    class="w-full rounded-2xl overflow-hidden border border-gray-100"
+                                    style="height: 220px;"></div>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <span>Pengiriman</span>
-                                <strong id="summaryShipping">Rp0</strong>
+
+                            <input type="text" id="quickAddressLabel"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-2"
+                                placeholder="Label alamat (contoh: Rumah)" />
+                            <input type="text" id="quickAddressRecipient"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-2"
+                                placeholder="Nama penerima" />
+                            <input type="tel" id="quickAddressPhone"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-2"
+                                placeholder="Nomor kontak" />
+                            <textarea id="quickAddressDetail" rows="2"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-2"
+                                placeholder="Detail alamat"></textarea>
+                            <input type="text" id="quickAddressPostal"
+                                class="w-full rounded-2xl border border-gray-200 px-4 py-2" placeholder="Kode pos" />
+                            <input type="hidden" id="quickAddressLat" />
+                            <input type="hidden" id="quickAddressLng" />
+                            <label class="inline-flex items-center gap-3 text-xs text-gray-500">
+                                <input type="checkbox" id="quickAddressPrimary"
+                                    class="rounded border-gray-300 text-primary focus:ring-primary" />
+                                Jadikan alamat utama
+                            </label>
+                            <div class="flex flex-wrap gap-3">
+                                <button type="button" id="quickAddressSave"
+                                    class="flex-1 rounded-full bg-primary text-white font-semibold py-2">Simpan
+                                    alamat</button>
+                                <button type="button" id="quickAddressCancel"
+                                    class="rounded-full border border-gray-200 px-5 py-2 font-semibold text-gray-500 hover:border-primary hover:text-primary">Batal</button>
                             </div>
-                            <div class="flex items-center justify-between text-base">
-                                <span>Total</span>
-                                <span id="summaryTotal" class="text-2xl font-bold text-dark">Rp0</span>
-                            </div>
+                            <p id="quickAddressStatus" class="text-xs text-green-600 hidden">Alamat ditambahkan.</p>
                         </div>
-                        <p class="mt-4 text-xs text-gray-400">Harga otomatis mengikuti keranjang dan sudah termasuk pajak.</p>
                     </div>
-                    <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
-                        <div class="flex items-center justify-between gap-3">
-                            <h3 class="text-lg font-semibold text-dark">Tambah Produk Lain</h3>
-                            <span id="moreProductsStatus" class="text-xs text-gray-400">Memuat...</span>
-                        </div>
-                        <label class="block mt-4">
-                            <span class="sr-only">Cari produk</span>
-                            <input id="moreProductsSearch" type="text" class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary" placeholder="Cari produk untuk ditambahkan..." />
+                    <label class="text-sm font-semibold text-gray-600">
+                        Catatan tambahan
+                        <textarea name="notes" rows="2"
+                            class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Opsional"></textarea>
+                    </label>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <label class="text-sm font-semibold text-gray-600">
+                            Metode pengiriman
+                            <select id="shippingSelect"
+                                class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary">
+                                <option value="0" data-label="Reguler 3-4 hari">Reguler (3-4 hari) - Gratis</option>
+                                <option value="20000" data-label="Kilat 1-2 hari">Kilat (1-2 hari) - Rp20.000</option>
+                                <option value="50000" data-label="Same day">Same day - Rp50.000</option>
+                            </select>
                         </label>
-                        <div id="moreProductsGrid" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
+                        <label class="text-sm font-semibold text-gray-600">
+                            Metode pembayaran
+                            <select name="payment"
+                                class="mt-2 w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                                required>
+                                <option value="">Pilih metode</option>
+                                <option value="transfer">Transfer bank</option>
+                                <option value="ewallet">E-Wallet (OVO, DANA, dll)</option>
+                                <option value="cod">COD / Bayar ditempat</option>
+                            </select>
+                        </label>
                     </div>
-                    <div class="bg-white rounded-3xl border border-gray-100 p-5 text-sm text-gray-600 space-y-3">
-                        <div class="flex items-center gap-3">
-                            <span class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center"><i class="fas fa-shield-heart"></i></span>
-                            <div>
-                                <p class="font-semibold text-dark">Proteksi barang</p>
-                                <p>Setiap pesanan dikurasi dan dibersihkan sebelum dikirim.</p>
-                            </div>
+                    <label class="flex items-start gap-3 text-sm text-gray-500">
+                        <input type="checkbox" required
+                            class="mt-1 rounded border-gray-300 text-primary focus:ring-primary" />
+                        Saya menyetujui S&K Wida Collection serta kebijakan pengembalian barang.
+                    </label>
+                    <p id="checkoutError" class="text-sm text-red-500 hidden">Terjadi kesalahan. Silakan coba lagi.</p>
+                    <div class="flex flex-wrap gap-4">
+                        <a href="cart"
+                            class="inline-flex items-center gap-2 rounded-full border border-gray-200 px-6 py-3 font-semibold text-gray-500 hover:border-primary hover:text-primary">
+                            <i class="fas fa-arrow-left"></i> Kembali ke keranjang
+                        </a>
+                        <button type="submit" id="payButton"
+                            class="inline-flex flex-1 items-center justify-center rounded-full bg-secondary text-white font-semibold py-3 shadow-lg hover:bg-secondary/90 disabled:opacity-60 disabled:cursor-not-allowed">
+                            Bayar sekarang
+                        </button>
+                    </div>
+                </form>
+            </article>
+
+            <aside class="space-y-5">
+                <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xl font-semibold text-dark">Ringkasan Pesanan</h2>
+                        <span
+                            class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">Real-time</span>
+                    </div>
+                    <ul id="summaryList" class="mt-5 space-y-4 text-sm text-gray-600"></ul>
+                    <div class="mt-5 space-y-3 text-sm text-gray-600">
+                        <div class="flex items-center justify-between">
+                            <span>Subtotal</span>
+                            <strong id="summarySubtotal">Rp0</strong>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span class="h-10 w-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center"><i class="fas fa-recycle"></i></span>
-                            <div>
-                                <p class="font-semibold text-dark">Gerakan berkelanjutan</p>
-                                <p>Belanja thrift = bantu kurangi limbah fashion.</p>
-                            </div>
+                        <div class="flex items-center justify-between">
+                            <span>Pengiriman</span>
+                            <strong id="summaryShipping">Rp0</strong>
+                        </div>
+                        <div class="flex items-center justify-between text-base">
+                            <span>Total</span>
+                            <span id="summaryTotal" class="text-2xl font-bold text-dark">Rp0</span>
                         </div>
                     </div>
-                </aside>
-            </section>
-        </div>
+                    <p class="mt-4 text-xs text-gray-400">Harga otomatis mengikuti keranjang dan sudah termasuk pajak.
+                    </p>
+                </div>
+                <div class="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+                    <div class="flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-semibold text-dark">Tambah Produk Lain</h3>
+                        <span id="moreProductsStatus" class="text-xs text-gray-400">Memuat...</span>
+                    </div>
+                    <label class="block mt-4">
+                        <span class="sr-only">Cari produk</span>
+                        <input id="moreProductsSearch" type="text"
+                            class="w-full rounded-2xl border border-gray-200 px-4 py-2 focus:border-primary focus:ring-primary"
+                            placeholder="Cari produk untuk ditambahkan..." />
+                    </label>
+                    <div id="moreProductsGrid" class="mt-4 grid gap-3 sm:grid-cols-2"></div>
+                </div>
+                <div class="bg-white rounded-3xl border border-gray-100 p-5 text-sm text-gray-600 space-y-3">
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center"><i
+                                class="fas fa-shield-heart"></i></span>
+                        <div>
+                            <p class="font-semibold text-dark">Proteksi barang</p>
+                            <p>Setiap pesanan dikurasi dan dibersihkan sebelum dikirim.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="h-10 w-10 rounded-full bg-secondary/10 text-secondary flex items-center justify-center"><i
+                                class="fas fa-recycle"></i></span>
+                        <div>
+                            <p class="font-semibold text-dark">Gerakan berkelanjutan</p>
+                            <p>Belanja thrift = bantu kurangi limbah fashion.</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </section>
+    </div>
 
-        <script src="js/reveal.js" defer></script>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script src="js/profile-data.js"></script>
-        <script>
-            document.addEventListener('DOMContentLoaded', () => {
-                const REDIRECT_KEY = 'wc_login_redirect';
-                const setLoginRedirect = (value) => {
-                    try {
-                        sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
-                    } catch (_) {}
-                };
-                const currentRelativeUrl = () => {
-                    const file = window.location.pathname.split('/').pop() || 'checkout';
-                    return `${file}${window.location.search || ''}${window.location.hash || ''}`;
-                };
-                (async () => {
-                    if (!window.AuthStore || !window.ProfileStore) {
-                        alert('Sistem auth belum siap. Muat ulang halaman.');
-                        return;
-                    }
-                    const me = await AuthStore.me();
-                    if (!me) {
-                        const next = currentRelativeUrl();
-                        setLoginRedirect(next);
-                        window.location.href = `login?next=${encodeURIComponent(next)}`;
-                        return;
-                    }
+    <script src="js/reveal.js" defer></script>
+    <script src="js/fast-transitions.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/profile-data.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const REDIRECT_KEY = 'wc_login_redirect';
+            const setLoginRedirect = (value) => {
+                try {
+                    sessionStorage.setItem(REDIRECT_KEY, String(value || ''));
+                } catch (_) { }
+            };
+            const currentRelativeUrl = () => {
+                const file = window.location.pathname.split('/').pop() || 'checkout';
+                return `${file}${window.location.search || ''}${window.location.hash || ''}`;
+            };
+            (async () => {
+                if (!window.AuthStore || !window.ProfileStore) {
+                    alert('Sistem auth belum siap. Muat ulang halaman.');
+                    return;
+                }
+                const me = await AuthStore.me();
+                if (!me) {
+                    const next = currentRelativeUrl();
+                    setLoginRedirect(next);
+                    window.location.href = `login?next=${encodeURIComponent(next)}`;
+                    return;
+                }
 
-                    await ProfileStore.ready;
+                await ProfileStore.ready;
 
                 const summaryList = document.getElementById('summaryList');
                 const summarySubtotal = document.getElementById('summarySubtotal');
@@ -650,7 +707,7 @@
                                 <li class="flex items-start justify-between gap-3">
                                     <div class="flex items-start gap-3 min-w-0">
                                         <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-50 to-white border border-gray-100 flex items-center justify-center overflow-hidden shrink-0">
-                                            ${line.image ? `<img src="${escapeHTML(line.image)}" alt="${escapeHTML(line.name || 'Produk') }" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : '<span class="text-[10px] text-gray-400">No Image</span>'}
+                                            ${line.image ? `<img src="${escapeHTML(line.image)}" alt="${escapeHTML(line.name || 'Produk')}" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer">` : '<span class="text-[10px] text-gray-400">No Image</span>'}
                                         </div>
                                         <div class="min-w-0">
                                             <p class="font-semibold text-dark truncate">${escapeHTML(line.name || 'Produk')}</p>
@@ -814,8 +871,9 @@
                         payButton.disabled = false;
                     }
                 });
-                })();
-            });
-        </script>
-    </body>
+            })();
+        });
+    </script>
+</body>
+
 </html>

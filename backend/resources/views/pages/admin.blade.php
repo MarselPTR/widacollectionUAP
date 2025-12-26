@@ -62,7 +62,8 @@
                     <div>
                         <h2 class="text-xl font-semibold text-dark">Tracking Pesanan</h2>
                         <p class="text-sm text-gray-500">Ubah status dari <span class="font-semibold">Dikemas</span> ke
-                            <span class="font-semibold">Dikirim</span>.</p>
+                            <span class="font-semibold">Dikirim</span>.
+                        </p>
                     </div>
                     <span id="ordersAdminTotal"
                         class="px-3 py-1 rounded-full bg-secondary/10 text-secondary text-sm font-semibold">0
@@ -209,6 +210,7 @@
     </main>
 
     <script src="js/profile-data.js"></script>
+    <script src="js/fast-transitions.js"></script>
     <script src="js/reveal.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -511,7 +513,7 @@
                 const group = normalizeGroup(form.category.value, form.title.value);
                 const type = normalizeType(form.type.value, form.title.value, group);
                 const uuid = String(form.productId.value || '').trim();
-                
+
                 const formData = new FormData();
                 formData.append('title', String(form.title.value || '').trim());
                 formData.append('category', group);
@@ -519,7 +521,7 @@
                 formData.append('price', Math.max(0, parseInt(form.price.value || '0', 10) || 0));
                 formData.append('stock', Math.max(0, parseInt(form.stock.value || '0', 10) || 0));
                 formData.append('description', String(form.description.value || '').trim());
-                
+
                 if (form.image.files[0]) {
                     formData.append('image', form.image.files[0]);
                 }

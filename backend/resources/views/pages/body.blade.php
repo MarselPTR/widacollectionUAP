@@ -10,9 +10,134 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="app.css">
+    <style>
+        /* ========== FAST PAGE TRANSITION (Same as Login/Register) ========== */
+        .page-transition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            pointer-events: none;
+            display: flex;
+            overflow: hidden;
+            /* Fallback to prevent gaps */
+        }
+
+        .transition-panel {
+            flex: 1;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0f3460 50%, #16213e 100%);
+            transform: translateY(0);
+            will-change: transform;
+            margin-left: -1px;
+            /* Overlap to prevent gap */
+        }
+
+        .transition-panel:first-child {
+            margin-left: 0;
+        }
+
+        /* Staggered delays - fast and smooth */
+        .transition-panel:nth-child(1) {
+            transition: transform 0.4s cubic-bezier(0.86, 0, 0.07, 1) 0ms;
+        }
+
+        .transition-panel:nth-child(2) {
+            transition: transform 0.4s cubic-bezier(0.86, 0, 0.07, 1) 30ms;
+        }
+
+        .transition-panel:nth-child(3) {
+            transition: transform 0.4s cubic-bezier(0.86, 0, 0.07, 1) 60ms;
+        }
+
+        .transition-panel:nth-child(4) {
+            transition: transform 0.4s cubic-bezier(0.86, 0, 0.07, 1) 90ms;
+        }
+
+        .transition-panel:nth-child(5) {
+            transition: transform 0.4s cubic-bezier(0.86, 0, 0.07, 1) 120ms;
+        }
+
+        .page-transition.reveal .transition-panel {
+            transform: translateY(-100%);
+        }
+
+        /* Center Logo During Transition */
+        .transition-logo {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            z-index: 10000;
+            opacity: 1;
+            pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+        }
+
+        .transition-logo.hide {
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+        }
+
+        .transition-logo .logo-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 15px 50px rgba(255, 107, 107, 0.5);
+            animation: logoPulse 0.6s ease-in-out infinite alternate;
+        }
+
+        @keyframes logoPulse {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.08);
+            }
+        }
+
+        /* Page Enter Animation */
+        .page-content {
+            opacity: 0;
+            animation: pageEnter 0.4s ease forwards 0.3s;
+        }
+
+        @keyframes pageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 
 <body class="font-poppins bg-gray-50">
+    <!-- Page Transition (Same as Login/Register) -->
+    <div id="pageTransition" class="page-transition">
+        <div class="transition-panel"></div>
+        <div class="transition-panel"></div>
+        <div class="transition-panel"></div>
+        <div class="transition-panel"></div>
+        <div class="transition-panel"></div>
+    </div>
+    <div id="transitionLogo" class="transition-logo">
+        <div class="logo-icon">WC</div>
+    </div>
     <!-- header dan navigation -->
     <header class="wc-header wc-header-on-hero sticky top-0 z-50 backdrop-blur">
         <div class="container mx-auto px-4">
@@ -604,6 +729,87 @@
         </div>
     </div>
 
+    <!-- Auth Login Modal -->
+    <div id="profileModal" class="fixed inset-0 z-50 hidden modal-bg p-4">
+        <div class="w-full h-full grid place-items-center">
+            <div class="modal modal-content-custom w-full max-w-md relative overflow-hidden">
+                <!-- Close Button -->
+                <button id="closeProfile"
+                    class="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 transition text-2xl w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-100">&times;</button>
+
+                <!-- Modal Content -->
+                <div class="text-center py-6 px-4">
+                    <!-- Icon -->
+                    <div
+                        class="mx-auto w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary text-white grid place-items-center text-3xl mb-5 shadow-lg">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+
+                    <!-- Title -->
+                    <h3 class="text-2xl font-bold text-dark mb-2">Masuk ke Akun</h3>
+                    <p class="text-gray-500 mb-6 max-w-sm mx-auto">Silakan login atau daftar untuk mengakses fitur ini
+                        dan nikmati pengalaman berbelanja yang lebih personal.</p>
+
+                    <!-- Features -->
+                    <div class="flex flex-wrap justify-center gap-3 mb-6 text-sm text-gray-600">
+                        <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary">
+                            <i class="fas fa-heart text-xs"></i> Wishlist
+                        </span>
+                        <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/10 text-secondary">
+                            <i class="fas fa-shopping-cart text-xs"></i> Keranjang
+                        </span>
+                        <span class="flex items-center gap-2 px-3 py-1 rounded-full bg-dark/10 text-dark">
+                            <i class="fas fa-truck text-xs"></i> Pesanan
+                        </span>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="flex flex-col gap-3">
+                        <a href="login"
+                            class="btn-main w-full py-3 text-center rounded-full font-semibold bg-gradient-to-r from-primary to-secondary text-white shadow-lg hover:shadow-xl transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Masuk Sekarang
+                        </a>
+                        <a href="register"
+                            class="w-full py-3 text-center rounded-full font-semibold border-2 border-gray-200 text-gray-600 hover:border-primary hover:text-primary transition">
+                            <i class="fas fa-user-plus mr-2"></i> Daftar Baru
+                        </a>
+                    </div>
+
+                    <!-- Footer -->
+                    <p class="text-xs text-gray-400 mt-6">
+                        Dengan masuk, Anda menyetujui <a href="#" class="text-primary hover:underline">Syarat &
+                            Ketentuan</a> kami.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Page Entrance Animation (Same as Login/Register)
+        (function () {
+            const pageTransition = document.getElementById('pageTransition');
+            const transitionLogo = document.getElementById('transitionLogo');
+
+            if (pageTransition && transitionLogo) {
+                // Hide logo with scale animation
+                setTimeout(() => {
+                    transitionLogo.classList.add('hide');
+                }, 200);
+
+                // Start panels sliding up
+                setTimeout(() => {
+                    pageTransition.classList.add('reveal');
+                }, 300);
+
+                // Remove overlay completely after animation
+                setTimeout(() => {
+                    pageTransition.style.display = 'none';
+                    transitionLogo.style.display = 'none';
+                }, 800);
+            }
+        })();
+    </script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             var heroSlides = Array.prototype.slice.call(document.querySelectorAll('[data-hero-slide]'));
@@ -627,6 +833,7 @@
         });
     </script>
     <script src="js/profile-data.js"></script>
+    <script src="js/fast-transitions.js"></script>
     <script src="js/reveal.js" defer></script>
     <script src="js/main.js" defer></script>
 </body>

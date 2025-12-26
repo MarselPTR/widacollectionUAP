@@ -124,6 +124,7 @@
     </main>
 
     <script src="js/reveal.js" defer></script>
+    <script src="js/fast-transitions.js"></script>
     <script src="js/profile-data.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
